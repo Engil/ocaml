@@ -17,16 +17,27 @@
 
 #include <caml/mlvalues.h>
 #include <caml/debugger.h>
+#include <caml/eventlog.h>
 #include "unixsupport.h"
 
 CAMLprim value unix_fork(value unit)
 {
   int ret;
+
+  if (caml_eventlog_enabled)
+    caml_ev_flush();
+
   ret = fork();
   if (ret == -1) uerror("fork", Nothing);
+
+  if (caml_eventlog_enabled)
+    if (ret == 0)
+      caml_ev_disable();
+
   if (caml_debugger_in_use)
     if ((caml_debugger_fork_mode && ret == 0) ||
         (!caml_debugger_fork_mode && ret != 0))
       caml_debugger_cleanup_fork();
+
   return Val_int(ret);
 }
