@@ -31,6 +31,7 @@
 #include "caml/signals.h"
 #include "caml/weak.h"
 #include "caml/memprof.h"
+#include "caml/eventlog.h"
 
 /* Pointers into the minor heap.
    [Caml_state->young_base]
@@ -145,6 +146,7 @@ void caml_set_minor_heap_size (asize_t bsz)
   CAMLassert (bsz % sizeof (value) == 0);
   if (Caml_state->young_ptr != Caml_state->young_alloc_end){
     CAML_INSTR_INT ("force_minor/set_minor_heap_size@", 1);
+    caml_ev_counter (EV_C_FORCE_MINOR_SET_MINOR_HEAP_SIZE, 1);
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
@@ -356,15 +358,21 @@ void caml_empty_minor_heap (void)
     prev_alloc_words = caml_allocated_words;
     Caml_state->in_minor_collection = 1;
     caml_gc_message (0x02, "<");
+    caml_ev_begin(EV_MINOR_LOCAL_ROOTS);
     caml_oldify_local_roots();
     CAML_INSTR_TIME (tmr, "minor/local_roots");
+    caml_ev_end(EV_MINOR_LOCAL_ROOTS);
+    caml_ev_begin(EV_MINOR_REF_TABLES);
     for (r = Caml_state->ref_table->base;
          r < Caml_state->ref_table->ptr; r++) {
       caml_oldify_one (**r, *r);
     }
     CAML_INSTR_TIME (tmr, "minor/ref_table");
+    caml_ev_end(EV_MINOR_REF_TABLES);
+    caml_ev_begin(EV_MINOR_COPY);
     caml_oldify_mopup ();
     CAML_INSTR_TIME (tmr, "minor/copy");
+    caml_ev_end(EV_MINOR_COPY);
     /* Update the ephemerons */
     for (re = Caml_state->ephe_ref_table->base;
          re < Caml_state->ephe_ref_table->ptr; re++){
@@ -383,6 +391,7 @@ void caml_empty_minor_heap (void)
       }
     }
     /* Update the OCaml finalise_last values */
+    caml_ev_begin(EV_MINOR_UPDATE_WEAK);
     caml_final_update_minor_roots();
     /* Run custom block finalisation of dead minor values */
     for (elt = Caml_state->custom_table->base;
@@ -398,6 +407,7 @@ void caml_empty_minor_heap (void)
       }
     }
     CAML_INSTR_TIME (tmr, "minor/update_weak");
+    caml_ev_end(EV_MINOR_UPDATE_WEAK);
     Caml_state->stat_minor_words +=
       Caml_state->young_alloc_end - Caml_state->young_ptr;
     caml_gc_clock +=
@@ -410,10 +420,14 @@ void caml_empty_minor_heap (void)
     Caml_state->extra_heap_resources_minor = 0;
     caml_gc_message (0x02, ">");
     Caml_state->in_minor_collection = 0;
+    caml_ev_begin(EV_MINOR_FINALIZED);
     caml_final_empty_young ();
     CAML_INSTR_TIME (tmr, "minor/finalized");
+    caml_ev_end(EV_MINOR_FINALIZED);
     Caml_state->stat_promoted_words += caml_allocated_words - prev_alloc_words;
     CAML_INSTR_INT ("minor/promoted#", caml_allocated_words - prev_alloc_words);
+    caml_ev_counter (EV_C_MINOR_PROMOTED,
+                     caml_allocated_words - prev_alloc_words);
     ++ Caml_state->stat_minor_collections;
     caml_memprof_renew_minor_sample();
     if (caml_minor_gc_end_hook != NULL) (*caml_minor_gc_end_hook) ();
@@ -432,9 +446,7 @@ void caml_empty_minor_heap (void)
 #endif
 }
 
-#ifdef CAML_INSTR
 extern uintnat caml_instr_alloc_jump;
-#endif
 
 /* Do a minor collection or a slice of major collection, call finalisation
    functions, etc.
@@ -444,23 +456,35 @@ extern uintnat caml_instr_alloc_jump;
 CAMLexport void caml_gc_dispatch (void)
 {
   value *trigger = Caml_state->young_trigger; /* save old value of trigger */
+
 #ifdef CAML_INSTR
   CAML_INSTR_SETUP(tmr, "dispatch");
   CAML_INSTR_TIME (tmr, "overhead");
   CAML_INSTR_INT ("alloc/jump#", caml_instr_alloc_jump);
   caml_instr_alloc_jump = 0;
 #endif
+  if (caml_eventlog_enabled) {
+    caml_ev_counter(EV_C_ALLOC_JUMP, caml_instr_alloc_jump);
+    caml_instr_alloc_jump =  0;
+  }
 
   if (trigger == Caml_state->young_alloc_start
       || Caml_state->requested_minor_gc) {
     /* The minor heap is full, we must do a minor collection. */
     /* reset the pointers first because the end hooks might allocate */
+    caml_ev_begin(EV_MINOR);
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
     caml_empty_minor_heap ();
     /* The minor heap is empty, we can start a major collection. */
-    if (caml_gc_phase == Phase_idle) caml_major_collection_slice (-1);
+    caml_ev_end(EV_MINOR);
+    if (caml_gc_phase == Phase_idle)
+    {
+      caml_ev_begin(EV_MAJOR);
+      caml_major_collection_slice (-1);
+      caml_ev_end(EV_MAJOR);
+    }
     CAML_INSTR_TIME (tmr, "dispatch/minor");
   }
   if (trigger != Caml_state->young_alloc_start
@@ -469,8 +493,10 @@ CAMLexport void caml_gc_dispatch (void)
     Caml_state->requested_major_slice = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_start;
     caml_update_young_limit();
+    caml_ev_begin(EV_MAJOR);
     caml_major_collection_slice (-1);
     CAML_INSTR_TIME (tmr, "dispatch/major");
+    caml_ev_end(EV_MAJOR);
   }
 }
 
@@ -507,6 +533,7 @@ void caml_alloc_small_dispatch (tag_t tag, intnat wosize, int flags)
     /* If not, then empty the minor heap, and check again for async
        callbacks. */
     CAML_INSTR_INT ("force_minor/alloc_small@", 1);
+    caml_ev_counter (EV_C_FORCE_MINOR_ALLOC_SMALL, 1);
     caml_gc_dispatch ();
   }
 
@@ -551,7 +578,8 @@ CAMLexport value caml_check_urgent_gc (value extra_root)
 
 static void realloc_generic_table
 (struct generic_table *tbl, asize_t element_size,
- char * msg_intr_int, char *msg_threshold, char *msg_growing, char *msg_error)
+ char * msg_intr_int, ev_gc_counter ev_counter_name,
+ char *msg_threshold, char *msg_growing, char *msg_error)
 {
   CAMLassert (tbl->ptr == tbl->limit);
   CAMLassert (tbl->limit <= tbl->end);
@@ -562,6 +590,7 @@ static void realloc_generic_table
                          element_size);
   }else if (tbl->limit == tbl->threshold){
     CAML_INSTR_INT (msg_intr_int, 1);
+    caml_ev_counter (ev_counter_name, 1);
     caml_gc_message (0x08, msg_threshold, 0);
     tbl->limit = tbl->end;
     caml_request_minor_gc ();
@@ -589,6 +618,7 @@ void caml_realloc_ref_table (struct caml_ref_table *tbl)
   realloc_generic_table
     ((struct generic_table *) tbl, sizeof (value *),
      "request_minor/realloc_ref_table@",
+     EV_C_REQUEST_MINOR_REALLOC_REF_TABLE,
      "ref_table threshold crossed\n",
      "Growing ref_table to %" ARCH_INTNAT_PRINTF_FORMAT "dk bytes\n",
      "ref_table overflow");
@@ -599,6 +629,7 @@ void caml_realloc_ephe_ref_table (struct caml_ephe_ref_table *tbl)
   realloc_generic_table
     ((struct generic_table *) tbl, sizeof (struct caml_ephe_ref_elt),
      "request_minor/realloc_ephe_ref_table@",
+     EV_C_REQUEST_MINOR_REALLOC_EPHE_REF_TABLE,
      "ephe_ref_table threshold crossed\n",
      "Growing ephe_ref_table to %" ARCH_INTNAT_PRINTF_FORMAT "dk bytes\n",
      "ephe_ref_table overflow");
@@ -609,6 +640,7 @@ void caml_realloc_custom_table (struct caml_custom_table *tbl)
   realloc_generic_table
     ((struct generic_table *) tbl, sizeof (struct caml_custom_elt),
      "request_minor/realloc_custom_table@",
+     EV_C_REQUEST_MINOR_REALLOC_CUSTOM_TABLE,
      "custom_table threshold crossed\n",
      "Growing custom_table to %" ARCH_INTNAT_PRINTF_FORMAT "dk bytes\n",
      "custom_table overflow");

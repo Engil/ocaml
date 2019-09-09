@@ -31,6 +31,7 @@
 #include "caml/major_gc.h"
 #include "caml/misc.h"
 #include "caml/mlvalues.h"
+#include "caml/eventlog.h"
 
 /*************** declarations common to all policies ******************/
 
@@ -188,6 +189,8 @@ static header_t *nf_allocate (mlsize_t wo_sz)
     ++instr_size[19];
   }
 #endif /* CAML_INSTR */
+    if (caml_eventlog_enabled)
+      caml_ev_alloc(wo_sz);
 
     CAMLassert (nf_prev != Val_NULL);
     /* Search from [nf_prev] to the end of the list. */
@@ -200,6 +203,8 @@ static header_t *nf_allocate (mlsize_t wo_sz)
       }
       prev = cur;
       cur = Next_small (prev);
+      if (caml_eventlog_enabled)
+        ++ caml_instr_alloc_jump;
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
@@ -214,9 +219,13 @@ static header_t *nf_allocate (mlsize_t wo_sz)
       }
       prev = cur;
       cur = Next_small (prev);
+      if (caml_eventlog_enabled)
+        ++ caml_instr_alloc_jump;
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
+      if (caml_eventlog_enabled)
+        ++  caml_instr_alloc_jump;
     }
     /* No suitable block was found. */
     return NULL;
@@ -239,6 +248,8 @@ static void nf_init_merge (void)
     instr_size[i] = 0;
   }
 #endif /* CAML_INSTR */
+  if (caml_eventlog_enabled)
+    caml_ev_alloc_fold();
   nf_last_fragment = NULL;
   caml_fl_merge = Nf_head;
 #ifdef DEBUG

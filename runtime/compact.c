@@ -29,6 +29,7 @@
 #include "caml/roots.h"
 #include "caml/weak.h"
 #include "caml/compact.h"
+#include "caml/eventlog.h"
 
 extern uintnat caml_percent_free;                   /* major_gc.c */
 extern void caml_shrink_heap (char *);              /* memory.c */
@@ -442,8 +443,10 @@ void caml_compact_heap (intnat new_allocation_policy)
   CAMLassert (Caml_state->custom_table->ptr ==
               Caml_state->custom_table->base);
 
+  caml_ev_begin(EV_COMPACT_MAIN);
   do_compaction (new_allocation_policy);
   CAML_INSTR_TIME (tmr, "compact/main");
+  caml_ev_end(EV_COMPACT_MAIN);
   /* Compaction may fail to shrink the heap to a reasonable size
      because it deals in complete chunks: if a very large chunk
      is at the beginning of the heap, everything gets moved to
@@ -505,11 +508,13 @@ void caml_compact_heap (intnat new_allocation_policy)
     if (Caml_state->stat_heap_wsz > Caml_state->stat_top_heap_wsz){
       Caml_state->stat_top_heap_wsz = Caml_state->stat_heap_wsz;
     }
+    caml_ev_begin(EV_COMPACT_RECOMPACT);
     do_compaction (-1);
     CAMLassert (Caml_state->stat_heap_chunks == 1);
     CAMLassert (Chunk_next (caml_heap_start) == NULL);
     CAMLassert (Caml_state->stat_heap_wsz == Wsize_bsize (Chunk_size (chunk)));
     CAML_INSTR_TIME (tmr, "compact/recompact");
+    caml_ev_end(EV_COMPACT_RECOMPACT);
   }
 }
 
