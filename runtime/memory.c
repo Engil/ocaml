@@ -33,6 +33,7 @@
 #include "caml/mlvalues.h"
 #include "caml/signals.h"
 #include "caml/memprof.h"
+#include "caml/eventlog.h"
 
 int caml_huge_fallback_count = 0;
 /* Number of times that mmapping big pages fails and we fell back to small
@@ -512,6 +513,7 @@ static inline value caml_alloc_shr_aux (mlsize_t wosize, tag_t tag, int track,
   caml_allocated_words += Whsize_wosize (wosize);
   if (caml_allocated_words > Caml_state->minor_heap_wsz){
     CAML_INSTR_INT ("request_major/alloc_shr@", 1);
+    caml_ev_counter (EV_C_REQUEST_MAJOR_ALLOC_SHR, 1);
     caml_request_major_slice ();
   }
 #ifdef DEBUG
@@ -619,6 +621,7 @@ CAMLexport void caml_adjust_gc_speed (mlsize_t res, mlsize_t max)
   caml_extra_heap_resources += (double) res / (double) max;
   if (caml_extra_heap_resources > 1.0){
     CAML_INSTR_INT ("request_major/adjust_gc_speed_1@", 1);
+    caml_ev_counter (EV_C_REQUEST_MAJOR_ADJUST_GC_SPEED, 1);
     caml_extra_heap_resources = 1.0;
     caml_request_major_slice ();
   }

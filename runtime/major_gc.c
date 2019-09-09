@@ -32,6 +32,7 @@
 #include "caml/roots.h"
 #include "caml/signals.h"
 #include "caml/weak.h"
+#include "caml/eventlog.h"
 
 #if defined (NATIVE_CODE) && defined (NO_NAKED_POINTERS)
 #define NATIVE_CODE_AND_NO_NAKED_POINTERS
@@ -416,6 +417,8 @@ static void mark_slice (intnat work)
         INSTR (slice_fields += end - start;)
         INSTR (if (size > end)
                  CAML_INSTR_INT ("major/mark/slice/remain", size - end);)
+        INSTR (if (size > end)
+                 caml_ev_counter (EV_C_MAJOR_MARK_SLICE_REMAIN, size - end);)
         for (i = start; i < end; i++){
           gray_vals_ptr = mark_slice_darken(gray_vals_ptr,v,i,
                                             /*in_ephemeron=*/ 0,
@@ -517,6 +520,8 @@ static void mark_slice (intnat work)
   current_index = start;
   INSTR (CAML_INSTR_INT ("major/mark/slice/fields#", slice_fields);)
   INSTR (CAML_INSTR_INT ("major/mark/slice/pointers#", slice_pointers);)
+  INSTR (caml_ev_counter (EV_C_MAJOR_MARK_SLICE_FIELDS, slice_fields);)
+  INSTR (caml_ev_counter (EV_C_MAJOR_MARK_SLICE_POINTERS, slice_pointers);)
 }
 
 /* Clean ephemerons */
@@ -702,7 +707,11 @@ void caml_major_collection_slice (intnat howmuch)
     p_backlog = p - 0.3;
     p = 0.3;
   }
+
   CAML_INSTR_INT ("major/work/extra#",
+                  (uintnat) (caml_extra_heap_resources * 1000000));
+
+  caml_ev_counter (EV_C_MAJOR_WORK_EXTRA,
                   (uintnat) (caml_extra_heap_resources * 1000000));
 
   caml_gc_message (0x40, "ordered work = %"
@@ -768,8 +777,10 @@ void caml_major_collection_slice (intnat howmuch)
     if (Caml_state->young_ptr == Caml_state->young_alloc_end){
       /* We can only start a major GC cycle if the minor allocation arena
          is empty, otherwise we'd have to treat it as a set of roots. */
+      caml_ev_begin(EV_MAJOR_ROOTS);
       start_cycle ();
       CAML_INSTR_TIME (tmr, "major/roots");
+      caml_ev_end(EV_MAJOR_ROOTS);
     }
     p = 0;
     goto finished;
@@ -791,8 +802,13 @@ void caml_major_collection_slice (intnat howmuch)
                    ARCH_INTNAT_PRINTF_FORMAT "d words\n", computed_work);
   if (caml_gc_phase == Phase_mark){
     CAML_INSTR_INT ("major/work/mark#", computed_work);
+    caml_ev_counter (EV_C_MAJOR_WORK_MARK, computed_work);
+    caml_ev_begin(caml_gc_subphase);
     mark_slice (computed_work);
+    #ifdef CAML_INSTR
     CAML_INSTR_TIME (tmr, mark_slice_name[caml_gc_subphase]);
+    #endif
+    caml_ev_end(caml_gc_subphase);
     caml_gc_message (0x02, "!");
   }else if (caml_gc_phase == Phase_clean){
     clean_slice (computed_work);
@@ -800,15 +816,21 @@ void caml_major_collection_slice (intnat howmuch)
   }else{
     CAMLassert (caml_gc_phase == Phase_sweep);
     CAML_INSTR_INT ("major/work/sweep#", computed_work);
+    caml_ev_counter (EV_C_MAJOR_WORK_SWEEP, computed_work);
+    caml_ev_begin(EV_MAJOR_SWEEP);
     sweep_slice (computed_work);
     CAML_INSTR_TIME (tmr, "major/sweep");
+    caml_ev_end(EV_MAJOR_SWEEP);
     caml_gc_message (0x02, "$");
   }
 
   if (caml_gc_phase == Phase_idle){
+    caml_ev_begin(EV_MAJOR_CHECK_AND_COMPACT);
     caml_compact_heap_maybe ();
+    caml_ev_end(EV_MAJOR_CHECK_AND_COMPACT);
     CAML_INSTR_TIME (tmr, "major/check_and_compact");
   }
+
 
  finished:
   caml_gc_message (0x40, "work-done = %"

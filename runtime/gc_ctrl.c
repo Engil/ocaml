@@ -30,6 +30,7 @@
 #include "caml/misc.h"
 #include "caml/mlvalues.h"
 #include "caml/signals.h"
+#include "caml/eventlog.h"
 #ifdef NATIVE_CODE
 #include "caml/stack.h"
 #else
@@ -417,6 +418,7 @@ CAMLprim value caml_gc_set(value v)
   uintnat oldpolicy;
   uintnat new_custom_maj, new_custom_min, new_custom_sz;
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin(EV_EXPLICIT_GC_SET);
 
   caml_verb_gc = Long_val (Field (v, 3));
 
@@ -502,17 +504,20 @@ CAMLprim value caml_gc_set(value v)
     caml_set_minor_heap_size (Bsize_wsize (newminwsz));
   }
   CAML_INSTR_TIME (tmr, "explicit/gc_set");
+  caml_ev_end(EV_EXPLICIT_GC_SET);
   return Val_unit;
 }
 
 CAMLprim value caml_gc_minor(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin(EV_EXPLICIT_GC_MINOR);
   CAMLassert (v == Val_unit);
   caml_request_minor_gc ();
   caml_gc_dispatch ();
   caml_check_urgent_gc (Val_unit);
   CAML_INSTR_TIME (tmr, "explicit/gc_minor");
+  caml_ev_end(EV_EXPLICIT_GC_MINOR);
   return Val_unit;
 }
 
@@ -534,12 +539,14 @@ static void test_and_compact (void)
 CAMLprim value caml_gc_major(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin(EV_EXPLICIT_GC_MAJOR);
   CAMLassert (v == Val_unit);
   caml_gc_message (0x1, "Major GC cycle requested\n");
   caml_empty_minor_heap ();
   caml_finish_major_cycle ();
   test_and_compact ();
   caml_check_urgent_gc (Val_unit);
+  caml_ev_end(EV_EXPLICIT_GC_MAJOR);
   CAML_INSTR_TIME (tmr, "explicit/gc_major");
   return Val_unit;
 }
@@ -547,6 +554,7 @@ CAMLprim value caml_gc_major(value v)
 CAMLprim value caml_gc_full_major(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin(EV_EXPLICIT_GC_FULL_MAJOR);
   CAMLassert (v == Val_unit);
   caml_gc_message (0x1, "Full major GC cycle requested\n");
   caml_empty_minor_heap ();
@@ -557,21 +565,25 @@ CAMLprim value caml_gc_full_major(value v)
   test_and_compact ();
   caml_check_urgent_gc (Val_unit);
   CAML_INSTR_TIME (tmr, "explicit/gc_full_major");
+  caml_ev_end(EV_EXPLICIT_GC_FULL_MAJOR);
   return Val_unit;
 }
 
 CAMLprim value caml_gc_major_slice (value v)
 {
+  caml_ev_begin(EV_EXPLICIT_GC_MAJOR_SLICE);
   CAML_INSTR_SETUP (tmr, "");
   CAMLassert (Is_long (v));
   caml_major_collection_slice (Long_val (v));
   CAML_INSTR_TIME (tmr, "explicit/gc_major_slice");
+  caml_ev_end(EV_EXPLICIT_GC_MAJOR_SLICE);
   return Val_long (0);
 }
 
 CAMLprim value caml_gc_compaction(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin(EV_EXPLICIT_GC_COMPACT);
   CAMLassert (v == Val_unit);
   caml_gc_message (0x10, "Heap compaction requested\n");
   caml_empty_minor_heap ();
@@ -582,6 +594,7 @@ CAMLprim value caml_gc_compaction(value v)
   caml_compact_heap ();
   caml_check_urgent_gc (Val_unit);
   CAML_INSTR_TIME (tmr, "explicit/gc_compact");
+  caml_ev_end(EV_EXPLICIT_GC_COMPACT);
   return Val_unit;
 }
 
@@ -639,6 +652,7 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
   caml_percent_max = norm_pmax (percent_m);
   caml_init_major_heap (major_heap_size);
   caml_major_window = norm_window (window);
+  caml_setup_eventlog();
   caml_custom_major_ratio = norm_custom_maj (custom_maj);
   caml_custom_minor_ratio = norm_custom_min (custom_min);
   caml_custom_minor_max_bsz = custom_bsz;
