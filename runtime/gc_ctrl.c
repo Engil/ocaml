@@ -30,6 +30,7 @@
 #include "caml/misc.h"
 #include "caml/mlvalues.h"
 #include "caml/signals.h"
+#include "caml/eventlog.h"
 #ifdef NATIVE_CODE
 #include "caml/stack.h"
 #else
@@ -508,11 +509,13 @@ CAMLprim value caml_gc_set(value v)
 CAMLprim value caml_gc_minor(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin("explicit/gc_minor");
   CAMLassert (v == Val_unit);
   caml_request_minor_gc ();
   caml_gc_dispatch ();
   caml_check_urgent_gc (Val_unit);
   CAML_INSTR_TIME (tmr, "explicit/gc_minor");
+  caml_ev_end("explicit/gc_minor");
   return Val_unit;
 }
 
@@ -642,6 +645,7 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
   caml_percent_max = norm_pmax (percent_m);
   caml_init_major_heap (major_heap_size);
   caml_major_window = norm_window (window);
+  caml_setup_eventlog();
   caml_custom_major_ratio = norm_custom_maj (custom_maj);
   caml_custom_minor_ratio = norm_custom_min (custom_min);
   caml_custom_minor_max_bsz = custom_bsz;

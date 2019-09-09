@@ -31,6 +31,7 @@
 #include "caml/signals.h"
 #include "caml/weak.h"
 #include "caml/memprof.h"
+#include "caml/eventlog.h"
 
 /* Pointers into the minor heap.
    [Caml_state->young_base]
@@ -442,6 +443,7 @@ extern uintnat caml_instr_alloc_jump;
 CAMLexport void caml_gc_dispatch (void)
 {
   value *trigger = Caml_state->young_trigger; /* save old value of trigger */
+  caml_ev_global_sync();
 #ifdef CAML_INSTR
   CAML_INSTR_SETUP(tmr, "dispatch");
   CAML_INSTR_TIME (tmr, "overhead");
