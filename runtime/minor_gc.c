@@ -355,15 +355,21 @@ void caml_empty_minor_heap (void)
     prev_alloc_words = caml_allocated_words;
     Caml_state->in_minor_collection = 1;
     caml_gc_message (0x02, "<");
+    caml_ev_begin("minor/local_roots");
     caml_oldify_local_roots();
     CAML_INSTR_TIME (tmr, "minor/local_roots");
+    caml_ev_end("minor/local_roots");
+    caml_ev_begin("minor/ref_table");
     for (r = Caml_state->ref_table->base;
          r < Caml_state->ref_table->ptr; r++) {
       caml_oldify_one (**r, *r);
     }
     CAML_INSTR_TIME (tmr, "minor/ref_table");
+    caml_ev_end("minor/ref_table");
+    caml_ev_begin("minor/copy");
     caml_oldify_mopup ();
     CAML_INSTR_TIME (tmr, "minor/copy");
+    caml_ev_end("minor/copy");
     /* Update the ephemerons */
     for (re = Caml_state->ephe_ref_table->base;
          re < Caml_state->ephe_ref_table->ptr; re++){
@@ -382,6 +388,7 @@ void caml_empty_minor_heap (void)
       }
     }
     /* Update the OCaml finalise_last values */
+    caml_ev_begin("minor/update_weak");
     caml_final_update_minor_roots();
     /* Run custom block finalisation of dead minor values */
     for (elt = Caml_state->custom_table->base;
@@ -397,6 +404,7 @@ void caml_empty_minor_heap (void)
       }
     }
     CAML_INSTR_TIME (tmr, "minor/update_weak");
+    caml_ev_end("minor/update_weak");
     Caml_state->stat_minor_words +=
       Caml_state->young_alloc_end - Caml_state->young_ptr;
     caml_gc_clock +=
@@ -409,8 +417,10 @@ void caml_empty_minor_heap (void)
     Caml_state->extra_heap_resources_minor = 0;
     caml_gc_message (0x02, ">");
     Caml_state->in_minor_collection = 0;
+    caml_ev_begin("minor/finalized");
     caml_final_empty_young ();
     CAML_INSTR_TIME (tmr, "minor/finalized");
+    caml_ev_end("minor/finalized");
     Caml_state->stat_promoted_words += caml_allocated_words - prev_alloc_words;
     CAML_INSTR_INT ("minor/promoted#", caml_allocated_words - prev_alloc_words);
     ++ Caml_state->stat_minor_collections;
@@ -455,6 +465,7 @@ CAMLexport void caml_gc_dispatch (void)
       || Caml_state->requested_minor_gc) {
     /* The minor heap is full, we must do a minor collection. */
     /* reset the pointers first because the end hooks might allocate */
+    caml_ev_begin("dispatch/minor");
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
@@ -462,15 +473,18 @@ CAMLexport void caml_gc_dispatch (void)
     /* The minor heap is empty, we can start a major collection. */
     if (caml_gc_phase == Phase_idle) caml_major_collection_slice (-1);
     CAML_INSTR_TIME (tmr, "dispatch/minor");
+    caml_ev_end("dispatch/minor");
   }
   if (trigger != Caml_state->young_alloc_start
       || Caml_state->requested_major_slice) {
     /* The minor heap is half-full, do a major GC slice. */
+    caml_ev_begin("dispatch/major");
     Caml_state->requested_major_slice = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_start;
     caml_update_young_limit();
     caml_major_collection_slice (-1);
     CAML_INSTR_TIME (tmr, "dispatch/major");
+    caml_ev_end("dispatch/major");
   }
 }
 

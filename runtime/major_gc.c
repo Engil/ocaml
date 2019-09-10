@@ -32,6 +32,7 @@
 #include "caml/roots.h"
 #include "caml/signals.h"
 #include "caml/weak.h"
+#include "caml/eventlog.h"
 
 #if defined (NATIVE_CODE) && defined (NO_NAKED_POINTERS)
 #define NATIVE_CODE_AND_NO_NAKED_POINTERS
@@ -594,7 +595,6 @@ static void sweep_slice (intnat work)
   }
 }
 
-#ifdef CAML_INSTR
 static char *mark_slice_name[] = {
   /* 0 */ NULL,
   /* 1 */ NULL,
@@ -612,7 +612,6 @@ static char *mark_slice_name[] = {
   /* 13 */  "major/mark_weak2",
   /* 14 */  "major/mark_final",
 };
-#endif
 
 /* The main entry point for the major GC. Called about once for each
    minor GC. [howmuch] is the amount of work to do:
@@ -702,6 +701,7 @@ void caml_major_collection_slice (intnat howmuch)
     p_backlog = p - 0.3;
     p = 0.3;
   }
+
   CAML_INSTR_INT ("major/work/extra#",
                   (uintnat) (caml_extra_heap_resources * 1000000));
 
@@ -768,8 +768,10 @@ void caml_major_collection_slice (intnat howmuch)
     if (Caml_state->young_ptr == Caml_state->young_alloc_end){
       /* We can only start a major GC cycle if the minor allocation arena
          is empty, otherwise we'd have to treat it as a set of roots. */
+      caml_ev_begin("major/roots");
       start_cycle ();
       CAML_INSTR_TIME (tmr, "major/roots");
+      caml_ev_end("major/roots");
     }
     p = 0;
     goto finished;
@@ -791,8 +793,10 @@ void caml_major_collection_slice (intnat howmuch)
                    ARCH_INTNAT_PRINTF_FORMAT "d words\n", computed_work);
   if (caml_gc_phase == Phase_mark){
     CAML_INSTR_INT ("major/work/mark#", computed_work);
+    caml_ev_begin(mark_slice_name[caml_gc_subphase]);
     mark_slice (computed_work);
     CAML_INSTR_TIME (tmr, mark_slice_name[caml_gc_subphase]);
+    caml_ev_end(mark_slice_name[caml_gc_subphase]);
     caml_gc_message (0x02, "!");
   }else if (caml_gc_phase == Phase_clean){
     clean_slice (computed_work);
@@ -800,15 +804,20 @@ void caml_major_collection_slice (intnat howmuch)
   }else{
     CAMLassert (caml_gc_phase == Phase_sweep);
     CAML_INSTR_INT ("major/work/sweep#", computed_work);
+    caml_ev_begin("major/sweep");
     sweep_slice (computed_work);
     CAML_INSTR_TIME (tmr, "major/sweep");
+    caml_ev_end("major/sweep");
     caml_gc_message (0x02, "$");
   }
 
   if (caml_gc_phase == Phase_idle){
+    caml_ev_begin("major/check_and_compact");
     caml_compact_heap_maybe ();
+    caml_ev_end("major/check_and_compact");
     CAML_INSTR_TIME (tmr, "major/check_and_compact");
   }
+
 
  finished:
   caml_gc_message (0x40, "work-done = %"

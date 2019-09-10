@@ -418,6 +418,7 @@ CAMLprim value caml_gc_set(value v)
   uintnat oldpolicy;
   uintnat new_custom_maj, new_custom_min, new_custom_sz;
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin("explicit/gc_set");
 
   caml_verb_gc = Long_val (Field (v, 3));
 
@@ -503,6 +504,7 @@ CAMLprim value caml_gc_set(value v)
     caml_set_minor_heap_size (Bsize_wsize (newminwsz));
   }
   CAML_INSTR_TIME (tmr, "explicit/gc_set");
+  caml_ev_begin("explicit/gc_set");
   return Val_unit;
 }
 
@@ -537,12 +539,14 @@ static void test_and_compact (void)
 CAMLprim value caml_gc_major(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin("explicit/gc_major");
   CAMLassert (v == Val_unit);
   caml_gc_message (0x1, "Major GC cycle requested\n");
   caml_empty_minor_heap ();
   caml_finish_major_cycle ();
   test_and_compact ();
   caml_check_urgent_gc (Val_unit);
+  caml_ev_end("explicit/gc_major");
   CAML_INSTR_TIME (tmr, "explicit/gc_major");
   return Val_unit;
 }
@@ -550,6 +554,7 @@ CAMLprim value caml_gc_major(value v)
 CAMLprim value caml_gc_full_major(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin("explicit/gc_full_major");
   CAMLassert (v == Val_unit);
   caml_gc_message (0x1, "Full major GC cycle requested\n");
   caml_empty_minor_heap ();
@@ -560,21 +565,25 @@ CAMLprim value caml_gc_full_major(value v)
   test_and_compact ();
   caml_check_urgent_gc (Val_unit);
   CAML_INSTR_TIME (tmr, "explicit/gc_full_major");
+  caml_ev_end("explicit/gc_full_end");
   return Val_unit;
 }
 
 CAMLprim value caml_gc_major_slice (value v)
 {
+  caml_ev_begin("explicit/gc_major_slice");
   CAML_INSTR_SETUP (tmr, "");
   CAMLassert (Is_long (v));
   caml_major_collection_slice (Long_val (v));
   CAML_INSTR_TIME (tmr, "explicit/gc_major_slice");
+  caml_ev_end("explicit/gc_major_slice");
   return Val_long (0);
 }
 
 CAMLprim value caml_gc_compaction(value v)
 {
   CAML_INSTR_SETUP (tmr, "");
+  caml_ev_begin("explicit/gc_compact");
   CAMLassert (v == Val_unit);
   caml_gc_message (0x10, "Heap compaction requested\n");
   caml_empty_minor_heap ();
@@ -585,6 +594,7 @@ CAMLprim value caml_gc_compaction(value v)
   caml_compact_heap ();
   caml_check_urgent_gc (Val_unit);
   CAML_INSTR_TIME (tmr, "explicit/gc_compact");
+  caml_ev_end("explicit/gc_compact");
   return Val_unit;
 }
 
