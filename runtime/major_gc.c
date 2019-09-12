@@ -417,6 +417,8 @@ static void mark_slice (intnat work)
         INSTR (slice_fields += end - start;)
         INSTR (if (size > end)
                  CAML_INSTR_INT ("major/mark/slice/remain", size - end);)
+        INSTR (if (size > end)
+                 caml_ev_counter ("major/mark/slice/remain", size - end);)
         for (i = start; i < end; i++){
           gray_vals_ptr = mark_slice_darken(gray_vals_ptr,v,i,
                                             /*in_ephemeron=*/ 0,
@@ -518,6 +520,8 @@ static void mark_slice (intnat work)
   current_index = start;
   INSTR (CAML_INSTR_INT ("major/mark/slice/fields#", slice_fields);)
   INSTR (CAML_INSTR_INT ("major/mark/slice/pointers#", slice_pointers);)
+  INSTR (caml_ev_counter ("major/mark/slice/fields#", slice_fields);)
+  INSTR (caml_ev_counter ("major/mark/slice/pointers#", slice_pointers);)
 }
 
 /* Clean ephemerons */
@@ -705,6 +709,9 @@ void caml_major_collection_slice (intnat howmuch)
   CAML_INSTR_INT ("major/work/extra#",
                   (uintnat) (caml_extra_heap_resources * 1000000));
 
+  caml_ev_counter ("major/work/extra#",
+                  (uintnat) (caml_extra_heap_resources * 1000000));
+
   caml_gc_message (0x40, "ordered work = %"
                    ARCH_INTNAT_PRINTF_FORMAT "d words\n", howmuch);
   caml_gc_message (0x40, "allocated_words = %"
@@ -793,6 +800,7 @@ void caml_major_collection_slice (intnat howmuch)
                    ARCH_INTNAT_PRINTF_FORMAT "d words\n", computed_work);
   if (caml_gc_phase == Phase_mark){
     CAML_INSTR_INT ("major/work/mark#", computed_work);
+    caml_ev_counter ("major/work/mark#", computed_work);
     caml_ev_begin(mark_slice_name[caml_gc_subphase]);
     mark_slice (computed_work);
     CAML_INSTR_TIME (tmr, mark_slice_name[caml_gc_subphase]);
@@ -804,6 +812,7 @@ void caml_major_collection_slice (intnat howmuch)
   }else{
     CAMLassert (caml_gc_phase == Phase_sweep);
     CAML_INSTR_INT ("major/work/sweep#", computed_work);
+    caml_ev_counter ("major/work/sweep#", computed_work);
     caml_ev_begin("major/sweep");
     sweep_slice (computed_work);
     CAML_INSTR_TIME (tmr, "major/sweep");

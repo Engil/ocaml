@@ -144,6 +144,7 @@ void caml_set_minor_heap_size (asize_t bsz)
   CAMLassert (bsz % sizeof (value) == 0);
   if (Caml_state->young_ptr != Caml_state->young_alloc_end){
     CAML_INSTR_INT ("force_minor/set_minor_heap_size@", 1);
+    caml_ev_counter ("force_minor/set_minor_heap_size@", 1);
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
@@ -423,6 +424,7 @@ void caml_empty_minor_heap (void)
     caml_ev_end("minor/finalized");
     Caml_state->stat_promoted_words += caml_allocated_words - prev_alloc_words;
     CAML_INSTR_INT ("minor/promoted#", caml_allocated_words - prev_alloc_words);
+    caml_ev_counter ("minor/promoted#", caml_allocated_words - prev_alloc_words);
     ++ Caml_state->stat_minor_collections;
     caml_memprof_renew_minor_sample();
     if (caml_minor_gc_end_hook != NULL) (*caml_minor_gc_end_hook) ();
@@ -497,6 +499,7 @@ void caml_alloc_small_dispatch (tag_t tag, intnat wosize, int flags)
   while (Caml_state->young_ptr < Caml_state->young_trigger){
     Caml_state->young_ptr += Whsize_wosize (wosize);
     CAML_INSTR_INT ("force_minor/alloc_small@", 1);
+    caml_ev_counter ("force_minor/alloc_small@", 1);
     caml_gc_dispatch ();
     if(flags & CAML_FROM_CAML) caml_check_urgent_gc (Val_unit);
     Caml_state->young_ptr -= Whsize_wosize (wosize);
@@ -538,6 +541,7 @@ static void realloc_generic_table
                          element_size);
   }else if (tbl->limit == tbl->threshold){
     CAML_INSTR_INT (msg_intr_int, 1);
+    caml_ev_counter (msg_intr_int, 1);
     caml_gc_message (0x08, msg_threshold, 0);
     tbl->limit = tbl->end;
     caml_request_minor_gc ();
