@@ -30,6 +30,7 @@
 #include "caml/major_gc.h"
 #include "caml/misc.h"
 #include "caml/mlvalues.h"
+#include "caml/eventlog.h"
 
 /* The free-list is kept sorted by increasing addresses.
    This makes the merging of adjacent free blocks possible.
@@ -153,7 +154,6 @@ static header_t *allocate_block (mlsize_t wh_sz, int flpi, value prev,
   return (header_t *) &Field (cur, Wosize_hd (h) - wh_sz);
 }
 
-#ifdef CAML_INSTR
 static uintnat instr_size [20] =
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static char *instr_name [20] = {
@@ -180,7 +180,8 @@ static char *instr_name [20] = {
 };
 uintnat caml_instr_alloc_jump = 0;
 /* number of pointers followed to allocate from the free list */
-#endif /*CAML_INSTR*/
+
+
 
 /* [caml_fl_allocate] does not set the header of the newly allocated block.
    The calling function must do it before any GC function gets called.
@@ -203,6 +204,16 @@ header_t *caml_fl_allocate (mlsize_t wo_sz)
     ++instr_size[19];
   }
 #endif /* CAML_INSTR */
+
+  if (caml_eventlog_enabled) {
+    if (wo_sz < 10){
+      ++instr_size[wo_sz];
+    }else if (wo_sz < 100){
+      ++instr_size[wo_sz/10 + 9];
+    }else{
+      ++instr_size[19];
+    }
+  } 
 
   switch (policy){
   case Policy_next_fit:
@@ -234,6 +245,8 @@ header_t *caml_fl_allocate (mlsize_t wo_sz)
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
+      if (caml_eventlog_enabled)
+        ++  caml_instr_alloc_jump;
     }
     /* No suitable block was found. */
     return NULL;
@@ -405,6 +418,14 @@ void caml_fl_init_merge (void)
     instr_size[i] = 0;
   }
 #endif /* CAML_INSTR */
+  if (caml_eventlog_enabled) {
+    int i;
+    for (i = 1; i < 20; i++){
+      if (instr_size[i] != 0)
+        caml_ev_counter (instr_name[i], instr_size[i]);
+      instr_size[i] = 0;
+    }
+  }
   last_fragment = NULL;
   caml_fl_merge = Fl_head;
 #ifdef DEBUG

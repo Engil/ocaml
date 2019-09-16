@@ -443,9 +443,7 @@ void caml_empty_minor_heap (void)
 #endif
 }
 
-#ifdef CAML_INSTR
 extern uintnat caml_instr_alloc_jump;
-#endif
 
 /* Do a minor collection or a slice of major collection, call finalisation
    functions, etc.
@@ -455,38 +453,47 @@ extern uintnat caml_instr_alloc_jump;
 CAMLexport void caml_gc_dispatch (void)
 {
   value *trigger = Caml_state->young_trigger; /* save old value of trigger */
-  caml_ev_global_sync();
+
 #ifdef CAML_INSTR
   CAML_INSTR_SETUP(tmr, "dispatch");
   CAML_INSTR_TIME (tmr, "overhead");
   CAML_INSTR_INT ("alloc/jump#", caml_instr_alloc_jump);
   caml_instr_alloc_jump = 0;
 #endif
+  if (caml_eventlog_enabled) {
+    caml_ev_counter("alloc/jump#", caml_instr_alloc_jump);
+    caml_instr_alloc_jump =  0;
+  }
 
   if (trigger == Caml_state->young_alloc_start
       || Caml_state->requested_minor_gc) {
     /* The minor heap is full, we must do a minor collection. */
     /* reset the pointers first because the end hooks might allocate */
-    caml_ev_begin("dispatch/minor");
+    caml_ev_begin("minor");
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
     caml_empty_minor_heap ();
     /* The minor heap is empty, we can start a major collection. */
-    if (caml_gc_phase == Phase_idle) caml_major_collection_slice (-1);
+    caml_ev_end("minor");
+    if (caml_gc_phase == Phase_idle)
+    {
+      caml_ev_begin("major");
+      caml_major_collection_slice (-1);
+      caml_ev_end("major");
+    }
     CAML_INSTR_TIME (tmr, "dispatch/minor");
-    caml_ev_end("dispatch/minor");
   }
   if (trigger != Caml_state->young_alloc_start
       || Caml_state->requested_major_slice) {
     /* The minor heap is half-full, do a major GC slice. */
-    caml_ev_begin("dispatch/major");
     Caml_state->requested_major_slice = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_start;
     caml_update_young_limit();
+    caml_ev_begin("major");
     caml_major_collection_slice (-1);
     CAML_INSTR_TIME (tmr, "dispatch/major");
-    caml_ev_end("dispatch/major");
+    caml_ev_end("major");
   }
 }
 
@@ -499,7 +506,7 @@ void caml_alloc_small_dispatch (tag_t tag, intnat wosize, int flags)
   while (Caml_state->young_ptr < Caml_state->young_trigger){
     Caml_state->young_ptr += Whsize_wosize (wosize);
     CAML_INSTR_INT ("force_minor/alloc_small@", 1);
-    caml_ev_counter ("force_minor/alloc_small@", 1);
+    caml_ev_counter ("force_minor/alloc_small", 1);
     caml_gc_dispatch ();
     if(flags & CAML_FROM_CAML) caml_check_urgent_gc (Val_unit);
     Caml_state->young_ptr -= Whsize_wosize (wosize);
