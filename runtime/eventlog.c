@@ -77,10 +77,32 @@ void setup_evbuf()
 
 }
 
+static void record_flush_time(FILE* out, uintnat start)
+{
+  uintnat ts = caml_time_counter();
+
+  fprintf(out, \
+    "{\"ph\": \"X\", " \
+    "\"ts\": "Pi64".%03d, " \
+    "\"dur\": "Pi64".%03d, " \
+    "\"name\": \"eventlog/flush\", " \
+    "\"pid\": %d" \
+    "},\n", \
+    (start - startup_timestamp) / 1000, \
+    (int)((start - startup_timestamp) % 1000), \
+    (uint64_t)(ts - start) / 1000,
+    (int)((ts - start) % 1000), \
+    getpid()
+  );
+
+}
+
 static void flush_events(FILE* out, struct event_buffer* eb)
 {
   uintnat i;
   uintnat n = eb->ev_generated;
+  uintnat start_time = caml_time_counter();
+
   for (i = eb->ev_flushed; i < n; i++) {
     struct event ev = eb->events[i];
     switch (ev.ty) {
@@ -107,28 +129,31 @@ static void flush_events(FILE* out, struct event_buffer* eb)
     }
   }
   eb->ev_flushed = n;
+  record_flush_time(out, start_time);
 }
 
 static void teardown_eventlog()
 {
-    struct evbuf_list_node* b;
+  struct evbuf_list_node* b;
   int count = 0;
-    for (b = evbuf_head.next; b != &evbuf_head; b = b->next) {
+  for (b = evbuf_head.next; b != &evbuf_head; b = b->next) {
+    
     flush_events(output, (struct event_buffer*)b);
     count++;
-    } 
-    fprintf(output,
+  } 
+  fprintf(output,
           "{\"name\": \"exit\", "
           "\"ph\": \"i\", "
           "\"ts\": "Pi64", "
           "\"pid\": %d, "
-          "\"tid\": %d, "
           "\"s\": \"g\"}\n"
           "]\n}\n",
           (caml_time_counter() - startup_timestamp) / 1000,
-          getpid(),
-          0);
+          getpid()
+  );
+  
   fclose(output);
+
 }
 
 void caml_setup_eventlog()
