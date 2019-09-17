@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <time.h>
 #include "caml/config.h"
 #ifdef SUPPORT_DYNAMIC_LINKING
 #ifdef __CYGWIN__
