@@ -149,14 +149,21 @@ static void teardown_eventlog()
 
 void caml_setup_eventlog()
 {
-  char filename[64];
-  sprintf(filename, "eventlog.%d.json", getpid());
+  char *filename;
+  char *ocaml_eventlog_filename;
+
   if (!caml_eventlog_enabled) return;
+
+  ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
+  if (ocaml_eventlog_filename) {
+    filename = ocaml_eventlog_filename;
+  } else {
+    filename = malloc(64);
+    sprintf(filename, "eventlog.%d.json", getpid());
+  }
+
   output = fopen(filename, "w");
   if (output) {
-    char* fullname = realpath(filename, 0);
-    
-    free(fullname);
     fprintf(output,
             "{\n"
             "\"displayTimeUnit\": \"ns\",\n"
@@ -164,6 +171,8 @@ void caml_setup_eventlog()
     startup_timestamp = caml_time_counter();
   } else {
     fprintf(stderr, "Could not begin logging events to %s\n", filename);
+    if (!ocaml_eventlog_filename)
+      free(filename);
     _exit(128);
   }
   atexit(&teardown_eventlog);
