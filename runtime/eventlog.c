@@ -152,6 +152,8 @@ void caml_setup_eventlog()
   char *filename;
   char *ocaml_eventlog_filename;
 
+  if (caml_secure_getenv("OCAML_EVENTLOG_ENABLED"))
+    caml_eventlog_enabled = 1;
   if (!caml_eventlog_enabled) return;
 
   ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
