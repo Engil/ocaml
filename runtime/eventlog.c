@@ -83,6 +83,10 @@ static void flush_events(FILE* out, struct event_buffer* eb)
   uintnat i;
   uintnat n = eb->ev_generated;
 
+  struct ctf_event_header ev_flush;
+  ev_flush.id = 4;
+  ev_flush.timestamp = caml_time_counter() - startup_timestamp;
+
   for (i = 0; i < n; i++) {
     struct event ev = eb->events[i];
     fwrite(&ev.header, sizeof(struct ctf_event_header), 1, out);
@@ -106,6 +110,11 @@ static void flush_events(FILE* out, struct event_buffer* eb)
       break;
     }
   }
+
+  uint64_t flush_end = caml_time_counter() - startup_timestamp;
+
+  fwrite(&ev_flush, sizeof(struct ctf_event_header), 1, out);
+  fwrite(&flush_end, sizeof(uint64_t), 1, out);
 }
 
 static void teardown_eventlog()
