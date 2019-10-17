@@ -70,12 +70,6 @@ void caml_ev_alloc_fold(void);
 void caml_ev_global_sync(void);
 
 
-/* FIXME: blocking/resuming not currently traced */
-#define EV_PAUSE_BLOCK -1
-#define EV_PAUSE_GC -2
-#define EV_PAUSE_TERMINATE -3
-#define EV_PAUSE_YIELD -4
-#define EV_PAUSE_RPC(domain) (domain)
 void caml_ev_pause(long reason);
 void caml_ev_resume();
 
