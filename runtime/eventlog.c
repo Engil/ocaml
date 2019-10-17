@@ -222,16 +222,21 @@ void caml_ev_alloc_fold()
   }
 }
 
-void caml_ev_pause()
+CAMLprim value caml_ev_resume(value v)
 {
-  if (caml_eventlog_status == EVENTLOG_ENABLED) {
-    caml_eventlog_status = EVENTLOG_PAUSED;
-    flush_events(output, evbuf);
-  };
-}
-
-void caml_ev_resume()
-{
+  CAMLassert(v == Val_unit);
   if (caml_eventlog_status == EVENTLOG_PAUSED)
     caml_eventlog_status = EVENTLOG_ENABLED;
+  return Val_unit;
+}
+
+CAMLprim value caml_ev_pause(value v)
+{
+  CAMLassert(v == Val_unit);
+  if (caml_eventlog_status == EVENTLOG_ENABLED) {
+    caml_eventlog_status = EVENTLOG_PAUSED;
+    if (evbuf)
+     flush_events(output, evbuf);
+  };
+  return Val_unit;
 }

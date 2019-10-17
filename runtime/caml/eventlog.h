@@ -68,7 +68,4 @@ void caml_ev_counter(ev_gc_counter counter, uint32_t val);
 void caml_ev_alloc(uintnat size);
 void caml_ev_alloc_fold(void);
 
-void caml_ev_pause();
-void caml_ev_resume();
-
 #endif
