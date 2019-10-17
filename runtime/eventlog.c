@@ -8,8 +8,6 @@
 #include "caml/eventlog.h"
 #include "caml/osdeps.h"
 
-typedef enum { BEGIN, END, BEGIN_FLOW, END_FLOW, GLOBAL_SYNC, COUNTER } evtype;
-
 #define CTF_MAGIC 0xc1fc1fc1
 
 struct ctf_stream_header {
@@ -84,7 +82,7 @@ static void flush_events(FILE* out, struct event_buffer* eb)
   uintnat n = eb->ev_generated;
 
   struct ctf_event_header ev_flush;
-  ev_flush.id = 4;
+  ev_flush.id = EV_FLUSH;
   ev_flush.timestamp = caml_time_counter() - startup_timestamp;
 
   for (i = 0; i < n; i++) {
@@ -158,7 +156,7 @@ void caml_setup_eventlog()
   atexit(&teardown_eventlog);
 }
 
-static void post_event(uint8_t phase, uint8_t counter_kind, uint8_t bucket, uint32_t count, evtype ty)
+static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind, uint8_t bucket, uint32_t count, ev_type ty)
 {
   uintnat i;
   struct event* ev;
@@ -183,21 +181,17 @@ static void post_event(uint8_t phase, uint8_t counter_kind, uint8_t bucket, uint
 
 void caml_ev_begin(ev_gc_phase phase)
 {
-  post_event(phase, 0, 0, 0, 0);
+  post_event(phase, 0, 0, 0, EV_ENTRY);
 }
 
 void caml_ev_end(ev_gc_phase phase)
 {
-  post_event(phase, 0, 0, 0, 1);
-}
-
-void caml_ev_global_sync()
-{
+  post_event(phase, 0, 0, 0, EV_EXIT);
 }
 
 void caml_ev_counter(ev_gc_counter counter, uint32_t val)
 {
-  post_event(0, counter, 0, val, 2);
+  post_event(0, counter, 0, val, EV_COUNTER);
 }
 
 void caml_ev_alloc(uintnat sz)
@@ -215,8 +209,8 @@ void caml_ev_alloc_fold()
 {
   int i;
   for (i = 1; i < 20; i++) {
-    if (alloc_buckets[i] != 0) { 
-     post_event(0, 0, i, alloc_buckets[i], 3);
+    if (alloc_buckets[i] != 0) {
+     post_event(0, 0, i, alloc_buckets[i], EV_ALLOC);
     };
      alloc_buckets[i] = 0;
   }

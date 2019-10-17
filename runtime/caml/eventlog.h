@@ -2,6 +2,14 @@
 #define CAML_EVENTLOG_H
 
 typedef enum {
+    EV_ENTRY,
+    EV_EXIT,
+    EV_COUNTER,
+    EV_ALLOC,
+    EV_FLUSH
+} ev_type;
+
+typedef enum {
     EV_COMPACT_MAIN,
     EV_COMPACT_RECOMPACT,
     EV_EXPLICIT_GC_SET,
