@@ -29,7 +29,13 @@ struct ctf_event_header {
 static uintnat alloc_buckets [20] = 
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-uintnat caml_eventlog_enabled = 0;
+typedef enum {
+    EVENTLOG_DISABLED,
+    EVENTLOG_ENABLED,
+    EVENTLOG_PAUSED
+} eventlog_state;
+
+eventlog_state caml_eventlog_status = EVENTLOG_DISABLED;
 
 struct event {
   struct ctf_event_header header;
@@ -132,8 +138,8 @@ void caml_setup_eventlog()
   char *ocaml_eventlog_filename;
 
   if (caml_secure_getenv("OCAML_EVENTLOG_ENABLED"))
-    caml_eventlog_enabled = 1;
-  if (!caml_eventlog_enabled) return;
+    caml_eventlog_status = EVENTLOG_ENABLED;
+  if (caml_eventlog_status == EVENTLOG_DISABLED) return;
 
   ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
   if (ocaml_eventlog_filename) {
@@ -160,7 +166,7 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind, uint8_t bu
 {
   uintnat i;
   struct event* ev;
-  if (!caml_eventlog_enabled) return;
+  if (caml_eventlog_status != EVENTLOG_ENABLED) return;
   if (!evbuf) setup_evbuf();
   i = evbuf->ev_generated;
   CAMLassert(i <= EVENT_BUF_SIZE);
@@ -216,6 +222,16 @@ void caml_ev_alloc_fold()
   }
 }
 
-void caml_ev_pause(long reason){}
-void caml_ev_resume(){}
-void caml_ev_msg(char* msg, ...){}
+void caml_ev_pause()
+{
+  if (caml_eventlog_status == EVENTLOG_ENABLED) {
+    caml_eventlog_status = EVENTLOG_PAUSED;
+    flush_events(output, evbuf);
+  };
+}
+
+void caml_ev_resume()
+{
+  if (caml_eventlog_status == EVENTLOG_PAUSED)
+    caml_eventlog_status = EVENTLOG_ENABLED;
+}
