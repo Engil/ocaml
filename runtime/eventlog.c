@@ -9,16 +9,19 @@
 #include "caml/osdeps.h"
 
 #define CTF_MAGIC 0xc1fc1fc1
+#define CAML_TRACE_VERSION 0x1
 
 struct ctf_stream_header {
   uint32_t magic;
-  uint32_t stream_id;
+  uint16_t caml_trace_version;
+  uint16_t stream_id;
 };
 
 static struct ctf_stream_header header = {
-  0xc1fc1fc1,
+  CTF_MAGIC,
+  CAML_TRACE_VERSION,
   0
-}; 
+};
 
 #pragma pack(1)
 struct ctf_event_header {
