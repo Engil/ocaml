@@ -96,17 +96,17 @@ static void flush_events(FILE* out, struct event_buffer* eb)
     fwrite(&ev.header, sizeof(struct ctf_event_header), 1, out);
     switch (ev.header.id)
     {
-    case 0:
+    case EV_ENTRY:
       fwrite(&ev.phase, sizeof(uint8_t), 1, out);
       break;
-    case 1:
+    case EV_EXIT:
       fwrite(&ev.phase, sizeof(uint8_t), 1, out);
       break;
-    case 2:
+    case EV_COUNTER:
       fwrite(&ev.counter_kind, sizeof(uint8_t), 1, out);
       fwrite(&ev.count, sizeof(uint32_t), 1, out);
       break;
-    case 3:
+    case EV_ALLOC:
       fwrite(&ev.alloc_bucket, sizeof(uint8_t), 1, out);
       fwrite(&ev.count, sizeof(uint32_t), 1, out);
       break;
