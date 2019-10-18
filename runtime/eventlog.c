@@ -121,7 +121,7 @@ static void teardown_eventlog()
   for (b = evbuf_head.next; b != &evbuf_head; b = b->next) {
     flush_events(output, (struct event_buffer*)b);
     count++;
-  } 
+  }
   fclose(output);
 }
 
