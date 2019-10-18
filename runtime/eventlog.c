@@ -42,7 +42,7 @@ eventlog_state caml_eventlog_status = EVENTLOG_DISABLED;
 struct event {
   struct ctf_event_header header;
   uint8_t  phase; /* for GC events */
-  uint8_t  counter_kind;
+  uint8_t  counter_kind; /* misc counter name */
   uint8_t  alloc_bucket; /* for alloc counters */
   uint32_t count; /* for misc counters */
 };
