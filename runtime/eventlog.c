@@ -162,6 +162,8 @@ void caml_setup_eventlog()
       free(filename);
     _exit(128);
   }
+  if (!ocaml_eventlog_filename)
+    free(filename);
   atexit(&teardown_eventlog);
 }
 
