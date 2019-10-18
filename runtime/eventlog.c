@@ -23,9 +23,10 @@ static struct ctf_stream_header header = {
   0
 };
 
+#pragma pack(1)
 struct ctf_event_header {
-  uint32_t id;
   uint64_t timestamp;
+  uint32_t id;
 };
 
 static uintnat alloc_buckets [20] =
@@ -88,12 +89,12 @@ static void flush_events(FILE* out, struct event_buffer* eb)
       fwrite(&ev.phase, sizeof(uint8_t), 1, out);
       break;
     case EV_COUNTER:
-      fwrite(&ev.counter_kind, sizeof(uint8_t), 1, out);
       fwrite(&ev.count, sizeof(uint32_t), 1, out);
+      fwrite(&ev.counter_kind, sizeof(uint8_t), 1, out);
       break;
     case EV_ALLOC:
-      fwrite(&ev.alloc_bucket, sizeof(uint8_t), 1, out);
       fwrite(&ev.count, sizeof(uint32_t), 1, out);
+      fwrite(&ev.alloc_bucket, sizeof(uint8_t), 1, out);
       break;
     default:
       break;
