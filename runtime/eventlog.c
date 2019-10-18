@@ -23,13 +23,12 @@ static struct ctf_stream_header header = {
   0
 };
 
-#pragma pack(1)
 struct ctf_event_header {
   uint32_t id;
   uint64_t timestamp;
 };
 
-static uintnat alloc_buckets [20] = 
+static uintnat alloc_buckets [20] =
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 typedef enum {
@@ -61,10 +60,7 @@ static uint64_t startup_timestamp = 0;
 
 #define EVENT_BUF_SIZE 4096
 struct event_buffer {
-  struct evbuf_list_node list;
-
   uintnat ev_generated;
-
   struct event events[EVENT_BUF_SIZE];
 };
 
@@ -77,12 +73,6 @@ void setup_evbuf()
   if (!evbuf) return;
 
   evbuf->ev_generated = 0;
-
-  evbuf->list.next = evbuf_head.next;
-  evbuf_head.next = &evbuf->list;
-  evbuf->list.prev = &evbuf_head;
-  evbuf->list.next->prev = &evbuf->list;
-
 }
 
 static void flush_events(FILE* out, struct event_buffer* eb)
