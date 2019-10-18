@@ -47,14 +47,6 @@ struct event {
   uint32_t count; /* for misc counters */
 };
 
-struct event_buffer;
-struct evbuf_list_node {
-  struct evbuf_list_node* next;
-  struct evbuf_list_node* prev;
-};
-
-static struct evbuf_list_node evbuf_head =
-  { &evbuf_head, &evbuf_head };
 static FILE* output;
 static uint64_t startup_timestamp = 0;
 
@@ -116,12 +108,7 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 
 static void teardown_eventlog()
 {
-  struct evbuf_list_node* b;
-  int count = 0;
-  for (b = evbuf_head.next; b != &evbuf_head; b = b->next) {
-    flush_events(output, (struct event_buffer*)b);
-    count++;
-  }
+  flush_events(output, evbuf);
   fclose(output);
 }
 
