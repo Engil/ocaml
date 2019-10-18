@@ -139,7 +139,7 @@ void caml_setup_eventlog()
     filename = ocaml_eventlog_filename;
   } else {
     filename = malloc(64);
-    sprintf(filename, "traces/stream-%d", getpid());
+    sprintf(filename, "caml-eventlog-%d", getpid());
   }
 
   output = fopen(filename, "w");
