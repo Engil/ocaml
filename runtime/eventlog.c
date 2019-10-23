@@ -73,7 +73,8 @@ void setup_eventlog_file()
 
   ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
   if (ocaml_eventlog_filename) {
-    filename = ocaml_eventlog_filename;
+    filename = malloc(128);
+    sprintf("%s.%d.eventlog", ocaml_eventlog_filename, eventlog_startup_pid);
   } else {
     filename = malloc(64);
     sprintf(filename, "caml-eventlog-%d", eventlog_startup_pid);
