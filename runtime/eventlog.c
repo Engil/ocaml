@@ -111,6 +111,8 @@ void post_fork_eventlog()
 
 static void flush_events(FILE* out, struct event_buffer* eb)
 {
+  if (!evbuf) return;
+
   uintnat i;
   uintnat n = eb->ev_generated;
 
@@ -164,7 +166,7 @@ void caml_setup_eventlog()
     caml_eventlog_status = EVENTLOG_ENABLED;
   if (caml_eventlog_status == EVENTLOG_DISABLED) return;
 
-    eventlog_startup_timestamp = caml_time_counter();
+  eventlog_startup_timestamp = caml_time_counter();
   eventlog_startup_pid = getpid();
   setup_eventlog_file();
 
