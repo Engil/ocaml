@@ -60,12 +60,24 @@ typedef enum {
 
 } ev_gc_counter;
 
+typedef enum {
+    EVENTLOG_DISABLED = 0,
+    EVENTLOG_ENABLED = 1,
+    EVENTLOG_PAUSED = 2
+} eventlog_state;
+
+eventlog_state caml_eventlog_status;
 uintnat caml_eventlog_enabled;
+uint64_t eventlog_last_timestamp;
+
 void caml_setup_eventlog(void);
 void caml_ev_begin(ev_gc_phase phase);
 void caml_ev_end(ev_gc_phase phase);
 void caml_ev_counter(ev_gc_counter counter, uint32_t val);
 void caml_ev_alloc(uintnat size);
 void caml_ev_alloc_fold(void);
+
+void pre_fork_eventlog(void);
+void post_fork_eventlog(void);
 
 #endif
