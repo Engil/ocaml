@@ -24,18 +24,15 @@ CAMLprim value unix_fork(value unit)
 {
   int ret;
 
-  if (caml_eventlog_status == EVENTLOG_ENABLED
-      || caml_eventlog_status == EVENTLOG_PAUSED)
-    pre_fork_eventlog();
+  if (caml_eventlog_enabled)
+    caml_ev_fork_setup();
 
   ret = fork();
   if (ret == -1) uerror("fork", Nothing);
 
-  if ((caml_eventlog_status == EVENTLOG_ENABLED) ||
-      (caml_eventlog_status == EVENTLOG_PAUSED)) {
+  if (caml_eventlog_enabled)
     if (ret == 0)
-      post_fork_eventlog();
-  };
+      caml_ev_fork_complete();
 
   if (caml_debugger_in_use)
     if ((caml_debugger_fork_mode && ret == 0) ||

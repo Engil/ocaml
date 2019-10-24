@@ -33,7 +33,6 @@ struct ctf_event_header {
 static uintnat alloc_buckets [20] =
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-eventlog_state caml_eventlog_status = EVENTLOG_DISABLED;
 
 struct event {
   struct ctf_event_header header;
@@ -44,9 +43,12 @@ struct event {
 };
 
 static FILE* output;
-static uint64_t eventlog_startup_timestamp = 0;
+static uintnat eventlog_startup_timestamp = 0;
 static uint32_t eventlog_startup_pid = 0;
-uint64_t eventlog_last_timestamp = 0;
+static uintnat eventlog_last_timestamp = 0;
+static uintnat eventlog_paused = 0;
+
+uintnat caml_eventlog_enabled = 0;
 
 #define EVENT_BUF_SIZE 4096
 struct event_buffer {
@@ -73,7 +75,7 @@ void setup_eventlog_file()
 
   ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
   if (ocaml_eventlog_filename) {
-    filename = malloc(128);
+    filename = malloc(strlen(ocaml_eventlog_filename) + 64);
     sprintf(filename, "%s.%d.eventlog", ocaml_eventlog_filename, eventlog_startup_pid);
   } else {
     filename = malloc(64);
@@ -86,7 +88,7 @@ void setup_eventlog_file()
     fflush(output);
   } else {
     fprintf(stderr, "Could not begin logging events to, disabling eventlog. %s\n", filename);
-    caml_eventlog_status = EVENTLOG_DISABLED;
+    caml_eventlog_enabled = 0;
     if (!ocaml_eventlog_filename)
       free(filename);
   }
@@ -94,25 +96,28 @@ void setup_eventlog_file()
     free(filename);
 }
 
-void pre_fork_eventlog()
+void caml_ev_fork_setup()
 {
   eventlog_last_timestamp = caml_time_counter();
   fflush(output);
 }
 
-void post_fork_eventlog()
+void caml_ev_fork_complete()
 {
-  uintnat delta = eventlog_last_timestamp - eventlog_startup_timestamp;
+  uintnat delta;
+
+  delta = eventlog_last_timestamp - eventlog_startup_timestamp;
   eventlog_startup_timestamp = caml_time_counter() + delta;
-  fclose(output);
   eventlog_startup_pid = getpid();
+  if (evbuf)
+    evbuf->ev_generated = 0;
+
+  fclose(output);
   setup_eventlog_file();
 }
 
 static void flush_events(FILE* out, struct event_buffer* eb)
 {
-  if (!evbuf) return;
-
   uintnat i;
   uintnat n = eb->ev_generated;
 
@@ -156,15 +161,16 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 
 static void teardown_eventlog()
 {
-  flush_events(output, evbuf);
+  if (evbuf)
+    flush_events(output, evbuf);
   fclose(output);
 }
 
 void caml_setup_eventlog()
 {
   if (caml_secure_getenv("OCAML_EVENTLOG_ENABLED"))
-    caml_eventlog_status = EVENTLOG_ENABLED;
-  if (caml_eventlog_status == EVENTLOG_DISABLED) return;
+    caml_eventlog_enabled = 1;
+  if (!caml_eventlog_enabled) return;
 
   eventlog_startup_timestamp = caml_time_counter();
   eventlog_startup_pid = getpid();
@@ -177,8 +183,10 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind, uint8_t bu
 {
   uintnat i;
   struct event* ev;
-  if (caml_eventlog_status != EVENTLOG_ENABLED) return;
+
+  if (!caml_eventlog_enabled) return;
   if (!evbuf) setup_evbuf();
+
   i = evbuf->ev_generated;
   CAMLassert(i <= EVENT_BUF_SIZE);
   if (i == EVENT_BUF_SIZE) {
@@ -229,23 +237,23 @@ void caml_ev_alloc_fold()
     if (alloc_buckets[i] != 0) {
      post_event(0, 0, i, alloc_buckets[i], EV_ALLOC);
     };
-     alloc_buckets[i] = 0;
+    alloc_buckets[i] = 0;
   }
 }
 
 CAMLprim value caml_ev_resume(value v)
 {
   CAMLassert(v == Val_unit);
-  if (caml_eventlog_status == EVENTLOG_PAUSED)
-    caml_eventlog_status = EVENTLOG_ENABLED;
+  if (caml_eventlog_enabled)
+    eventlog_paused = 0;
   return Val_unit;
 }
 
 CAMLprim value caml_ev_pause(value v)
 {
   CAMLassert(v == Val_unit);
-  if (caml_eventlog_status == EVENTLOG_ENABLED) {
-    caml_eventlog_status = EVENTLOG_PAUSED;
+  if (caml_eventlog_enabled) {
+    eventlog_paused = 1;
     if (evbuf)
      flush_events(output, evbuf);
   };
