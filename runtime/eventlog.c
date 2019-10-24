@@ -76,7 +76,8 @@ void setup_eventlog_file()
   ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
   if (ocaml_eventlog_filename) {
     filename = malloc(strlen(ocaml_eventlog_filename) + 64);
-    sprintf(filename, "%s.%d.eventlog", ocaml_eventlog_filename, eventlog_startup_pid);
+    sprintf(filename, "%s.%d.eventlog",
+            ocaml_eventlog_filename, eventlog_startup_pid);
   } else {
     filename = malloc(64);
     sprintf(filename, "caml-eventlog-%d", eventlog_startup_pid);
@@ -87,7 +88,6 @@ void setup_eventlog_file()
     fwrite(&header, sizeof(struct ctf_stream_header), 1, output);
     fflush(output);
   } else {
-    fprintf(stderr, "Could not begin logging events to, disabling eventlog. %s\n", filename);
     caml_eventlog_enabled = 0;
     if (!ocaml_eventlog_filename)
       free(filename);
@@ -179,7 +179,8 @@ void caml_setup_eventlog()
   atexit(&teardown_eventlog);
 }
 
-static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind, uint8_t bucket, uint32_t count, ev_type ty)
+static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
+                       uint8_t bucket, uint32_t count, ev_type ty)
 {
   uintnat i;
   struct event* ev;

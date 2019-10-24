@@ -424,7 +424,8 @@ void caml_empty_minor_heap (void)
     caml_ev_end(EV_MINOR_FINALIZED);
     Caml_state->stat_promoted_words += caml_allocated_words - prev_alloc_words;
     CAML_INSTR_INT ("minor/promoted#", caml_allocated_words - prev_alloc_words);
-    caml_ev_counter (EV_C_MINOR_PROMOTED, caml_allocated_words - prev_alloc_words);
+    caml_ev_counter (EV_C_MINOR_PROMOTED,
+                     caml_allocated_words - prev_alloc_words);
     ++ Caml_state->stat_minor_collections;
     caml_memprof_renew_minor_sample();
     if (caml_minor_gc_end_hook != NULL) (*caml_minor_gc_end_hook) ();
@@ -537,7 +538,8 @@ CAMLexport void caml_minor_collection (void)
 
 static void realloc_generic_table
 (struct generic_table *tbl, asize_t element_size,
- char * msg_intr_int, ev_gc_counter ev_counter_name, char *msg_threshold, char *msg_growing, char *msg_error)
+ char * msg_intr_int, ev_gc_counter ev_counter_name,
+ char *msg_threshold, char *msg_growing, char *msg_error)
 {
   CAMLassert (tbl->ptr == tbl->limit);
   CAMLassert (tbl->limit <= tbl->end);

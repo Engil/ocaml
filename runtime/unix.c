@@ -431,7 +431,10 @@ char *caml_secure_getenv (char const *var)
 
 int64_t caml_time_counter(void)
 {
-#if defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK != (-1)
+#if defined(_POSIX_TIMERS)                      \
+  && defined(_POSIX_MONOTONIC_CLOCK)            \
+  && _POSIX_MONOTONIC_CLOCK != (-1)
+
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   return

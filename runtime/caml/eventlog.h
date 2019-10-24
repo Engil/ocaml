@@ -20,9 +20,9 @@ typedef enum {
     EV_MAJOR,
     EV_MAJOR_ROOTS,
     EV_MAJOR_SWEEP,
-    EV_MAJOR_MARK_ROOTS, /* FIXME: these NEEDS to be 10, 11 and 12 see major_gc.h caml_gc_subphase defines */
+    EV_MAJOR_MARK_ROOTS,
     EV_MAJOR_MARK_MAIN,
-    EV_MAJOR_MARK_FINAL, /* FIXME end */
+    EV_MAJOR_MARK_FINAL,
     EV_MAJOR_ROOTS_GLOBAL,
     EV_MAJOR_ROOTS_LOCAL,
     EV_MAJOR_ROOTS_C,

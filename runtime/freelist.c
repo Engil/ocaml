@@ -208,9 +208,8 @@ header_t *caml_fl_allocate (mlsize_t wo_sz)
   }
 #endif /* CAML_INSTR */
 
-  if (caml_eventlog_enabled) {
+  if (caml_eventlog_enabled)
     caml_ev_alloc(wo_sz);
-  } 
 
   switch (policy){
   case Policy_next_fit:
@@ -226,7 +225,7 @@ header_t *caml_fl_allocate (mlsize_t wo_sz)
       prev = cur;
       cur = Next (prev);
       if (caml_eventlog_enabled)
-	++ caml_instr_alloc_jump;
+        ++ caml_instr_alloc_jump;
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
@@ -242,7 +241,7 @@ header_t *caml_fl_allocate (mlsize_t wo_sz)
       prev = cur;
       cur = Next (prev);
       if (caml_eventlog_enabled)
-	++ caml_instr_alloc_jump;
+        ++ caml_instr_alloc_jump;
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
