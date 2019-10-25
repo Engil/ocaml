@@ -67,8 +67,10 @@ void caml_ev_end(ev_gc_phase phase);
 void caml_ev_counter(ev_gc_counter counter, uint32_t val);
 void caml_ev_alloc(uintnat size);
 void caml_ev_alloc_fold(void);
+void caml_ev_flush(void);
+void caml_ev_disable(void);
 
-void caml_ev_fork_setup(void);
-void caml_ev_fork_complete(void);
+CAMLprim value caml_ev_resume(value v);
+CAMLprim value caml_ev_pause(value v);
 
 #endif

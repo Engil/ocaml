@@ -45,7 +45,6 @@ struct event {
 static FILE* output;
 static uintnat eventlog_startup_timestamp = 0;
 static uint32_t eventlog_startup_pid = 0;
-static uintnat eventlog_last_timestamp = 0;
 static uintnat eventlog_paused = 0;
 
 uintnat caml_eventlog_enabled = 0;
@@ -96,26 +95,6 @@ void setup_eventlog_file()
     free(filename);
 }
 
-void caml_ev_fork_setup()
-{
-  eventlog_last_timestamp = caml_time_counter();
-  fflush(output);
-}
-
-void caml_ev_fork_complete()
-{
-  uintnat delta;
-
-  delta = eventlog_last_timestamp - eventlog_startup_timestamp;
-  eventlog_startup_timestamp = caml_time_counter() + delta;
-  eventlog_startup_pid = getpid();
-  if (evbuf)
-    evbuf->ev_generated = 0;
-
-  fclose(output);
-  setup_eventlog_file();
-}
-
 static void flush_events(FILE* out, struct event_buffer* eb)
 {
   uintnat i;
@@ -153,17 +132,24 @@ static void flush_events(FILE* out, struct event_buffer* eb)
     }
   }
 
-  uint64_t flush_end = caml_time_counter() - eventlog_startup_timestamp;
+  uint64_t flush_duration =
+    (caml_time_counter() - eventlog_startup_timestamp) - ev_flush.timestamp;
 
   fwrite(&ev_flush, sizeof(struct ctf_event_header), 1, out);
-  fwrite(&flush_end, sizeof(uint64_t), 1, out);
+  fwrite(&flush_duration, sizeof(uint64_t), 1, out);
 }
 
 static void teardown_eventlog()
 {
-  if (evbuf)
+  if (evbuf) {
     flush_events(output, evbuf);
-  fclose(output);
+    free(evbuf);
+    evbuf = 0;
+  }
+  if (output) {
+    fclose(output);
+    output = 0;
+  }
 }
 
 void caml_setup_eventlog()
@@ -241,6 +227,17 @@ void caml_ev_alloc_fold()
     alloc_buckets[i] = 0;
   }
 }
+
+void caml_ev_flush()
+{
+  fflush(output);
+}
+
+void caml_ev_disable()
+{
+  teardown_eventlog();
+}
+
 
 CAMLprim value caml_ev_resume(value v)
 {
