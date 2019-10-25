@@ -466,9 +466,11 @@ static void mark_slice (intnat work)
       markhp = chunk;
       limit = chunk + Chunk_size (chunk);
     } else if (caml_gc_subphase == Subphase_mark_roots) {
+      caml_ev_begin(caml_gc_subphase);
       gray_vals_cur = gray_vals_ptr;
       work = caml_darken_all_roots_slice (work);
       gray_vals_ptr = gray_vals_cur;
+      caml_ev_end(caml_gc_subphase);
       if (work > 0){
         caml_gc_subphase = Subphase_mark_main;
       }
@@ -480,6 +482,7 @@ static void mark_slice (intnat work)
       ephe_list_pure = 1;
       ephes_to_check = ephes_checked_if_pure;
     }else{
+      caml_ev_begin(caml_gc_subphase);
       switch (caml_gc_subphase){
       case Subphase_mark_main: {
           /* Subphase_mark_main is done.
@@ -493,6 +496,7 @@ static void mark_slice (intnat work)
           }
           /* Complete the marking */
           ephes_to_check = ephes_checked_if_pure;
+          caml_ev_end(caml_gc_subphase);
           caml_gc_subphase = Subphase_mark_final;
       }
         break;
@@ -508,7 +512,8 @@ static void mark_slice (intnat work)
           /* Initialise the sweep phase. */
           init_sweep_phase();
         }
-          work = 0;
+        work = 0;
+        caml_ev_end(caml_gc_subphase);
       }
         break;
       default: CAMLassert (0);
@@ -803,12 +808,12 @@ void caml_major_collection_slice (intnat howmuch)
   if (caml_gc_phase == Phase_mark){
     CAML_INSTR_INT ("major/work/mark#", computed_work);
     caml_ev_counter (EV_C_MAJOR_WORK_MARK, computed_work);
-    caml_ev_begin(caml_gc_subphase);
+    caml_ev_begin(EV_MAJOR_MARK);
     mark_slice (computed_work);
+    caml_ev_end(EV_MAJOR_MARK);
     #ifdef CAML_INSTR
     CAML_INSTR_TIME (tmr, mark_slice_name[caml_gc_subphase]);
     #endif
-    caml_ev_end(caml_gc_subphase);
     caml_gc_message (0x02, "!");
   }else if (caml_gc_phase == Phase_clean){
     clean_slice (computed_work);
