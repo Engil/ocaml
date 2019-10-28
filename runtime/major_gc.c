@@ -466,11 +466,11 @@ static void mark_slice (intnat work)
       markhp = chunk;
       limit = chunk + Chunk_size (chunk);
     } else if (caml_gc_subphase == Subphase_mark_roots) {
-      caml_ev_begin(caml_gc_subphase);
+      caml_ev_begin(EV_MAJOR_MARK_ROOTS);
       gray_vals_cur = gray_vals_ptr;
       work = caml_darken_all_roots_slice (work);
       gray_vals_ptr = gray_vals_cur;
-      caml_ev_end(caml_gc_subphase);
+      caml_ev_end(EV_MAJOR_MARK_ROOTS);
       if (work > 0){
         caml_gc_subphase = Subphase_mark_main;
       }
@@ -482,11 +482,11 @@ static void mark_slice (intnat work)
       ephe_list_pure = 1;
       ephes_to_check = ephes_checked_if_pure;
     }else{
-      caml_ev_begin(caml_gc_subphase);
       switch (caml_gc_subphase){
       case Subphase_mark_main: {
           /* Subphase_mark_main is done.
              Mark finalised values. */
+          caml_ev_begin(EV_MAJOR_MARK_MAIN);
           gray_vals_cur = gray_vals_ptr;
           caml_final_update_mark_phase ();
           gray_vals_ptr = gray_vals_cur;
@@ -496,13 +496,14 @@ static void mark_slice (intnat work)
           }
           /* Complete the marking */
           ephes_to_check = ephes_checked_if_pure;
-          caml_ev_end(caml_gc_subphase);
+          caml_ev_end(EV_MAJOR_MARK_MAIN);
           caml_gc_subphase = Subphase_mark_final;
       }
         break;
       case Subphase_mark_final: {
         /** The set of unreachable value will not change anymore for
             this cycle. Start clean phase. */
+        caml_ev_begin(EV_MAJOR_MARK_FINAL);
         caml_gc_phase = Phase_clean;
         caml_final_update_clean_phase ();
         if (caml_ephe_list_head != (value) NULL){
@@ -513,7 +514,7 @@ static void mark_slice (intnat work)
           init_sweep_phase();
         }
         work = 0;
-        caml_ev_end(caml_gc_subphase);
+        caml_ev_end(EV_MAJOR_MARK_FINAL);
       }
         break;
       default: CAMLassert (0);
@@ -525,8 +526,6 @@ static void mark_slice (intnat work)
   current_index = start;
   INSTR (CAML_INSTR_INT ("major/mark/slice/fields#", slice_fields);)
   INSTR (CAML_INSTR_INT ("major/mark/slice/pointers#", slice_pointers);)
-  INSTR (caml_ev_counter (EV_C_MAJOR_MARK_SLICE_FIELDS, slice_fields);)
-  INSTR (caml_ev_counter (EV_C_MAJOR_MARK_SLICE_POINTERS, slice_pointers);)
 }
 
 /* Clean ephemerons */
