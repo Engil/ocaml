@@ -103,7 +103,6 @@ void caml_parse_ocamlrunparam(void)
       case 'c': scanmult (opt, &p); caml_cleanup_on_exit = (p != 0); break;
       case 'h': scanmult (opt, &caml_init_heap_wsz); break;
       case 'H': scanmult (opt, &caml_use_huge_pages); break;
-      case 'e': scanmult (opt, &caml_eventlog_enabled); break;
       case 'i': scanmult (opt, &caml_init_heap_chunk_sz); break;
       case 'l': scanmult (opt, &caml_init_max_stack_wsz); break;
       case 'M': scanmult (opt, &caml_init_custom_major_ratio); break;
