@@ -88,11 +88,8 @@ void setup_eventlog_file()
     fflush(output);
   } else {
     caml_eventlog_enabled = 0;
-    if (!ocaml_eventlog_filename)
-      free(filename);
   }
-  if (!ocaml_eventlog_filename)
-    free(filename);
+  free(filename);
 }
 
 static void flush_events(FILE* out, struct event_buffer* eb)
