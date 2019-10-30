@@ -169,6 +169,7 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
   struct event* ev;
 
   if (!caml_eventlog_enabled) return;
+  if (eventlog_paused) return;
   if (!evbuf) setup_evbuf();
 
   i = evbuf->ev_generated;
