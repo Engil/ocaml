@@ -61,9 +61,10 @@ static struct event_buffer* evbuf;
 void setup_evbuf()
 {
   CAMLassert(!evbuf);
-  evbuf = malloc(sizeof(*evbuf));
+  evbuf = caml_stat_alloc_noexc(sizeof(*evbuf));
 
-  if (!evbuf) return;
+  if (evbuf == NULL)
+    caml_fatal_error("eventlog: could not allocate event buffer");
 
   evbuf->ev_generated = 0;
 }
@@ -140,7 +141,7 @@ static void teardown_eventlog()
 {
   if (evbuf) {
     flush_events(output, evbuf);
-    free(evbuf);
+    caml_stat_free(evbuf);
     evbuf = 0;
   }
   if (output) {
