@@ -80,8 +80,6 @@ static char *instr_name [20] = {
   "alloc90-99@",
   "alloc_large@",
 };
-uintnat caml_instr_alloc_jump = 0;
-/* number of pointers followed to allocate from the free set */
 
 #define INSTR_alloc_jump(n) (caml_instr_alloc_jump += (n))
 
@@ -91,6 +89,8 @@ uintnat caml_instr_alloc_jump = 0;
 
 #endif /*CAML_INSTR*/
 
+uintnat caml_instr_alloc_jump = 0;
+/* number of pointers followed to allocate from the free set */
 
 /********************* next-fit allocation policy *********************/
 
