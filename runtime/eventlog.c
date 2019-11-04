@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include "caml/alloc.h"
 #include "caml/eventlog.h"
+#include "caml/misc.h"
 #include "caml/osdeps.h"
 
 #define CTF_MAGIC 0xc1fc1fc1
@@ -69,27 +70,26 @@ void setup_evbuf()
 
 void setup_eventlog_file()
 {
+  value v;
   char *filename;
   char *ocaml_eventlog_filename;
 
   ocaml_eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
   if (ocaml_eventlog_filename) {
-    filename = malloc(strlen(ocaml_eventlog_filename) + 64);
-    sprintf(filename, "%s.%d.eventlog",
+    v = caml_alloc_sprintf("%s.%d.eventlog",
             ocaml_eventlog_filename, eventlog_startup_pid);
   } else {
-    filename = malloc(64);
-    sprintf(filename, "caml-eventlog-%d", eventlog_startup_pid);
+    v = caml_alloc_sprintf("caml-eventlog-%d", eventlog_startup_pid);
   }
-
-  output = fopen(filename, "wb");
+  filename = caml_stat_strdup_os(String_val(v));
+  output = fopen_os(filename, "wb");
   if (output) {
     fwrite(&header, sizeof(struct ctf_stream_header), 1, output);
     fflush(output);
   } else {
     caml_eventlog_enabled = 0;
   }
-  free(filename);
+  caml_stat_free(filename);
 }
 
 static void flush_events(FILE* out, struct event_buffer* eb)
