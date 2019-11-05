@@ -1018,6 +1018,24 @@ CAMLexport int caml_win32_isatty(int fd)
   return 0;
 }
 
+int64_t caml_time_counter(value unit)
+{
+  static double clock_freq = 0;
+  static LARGE_INTEGER now;
+
+  if (clock_freq == 0) {
+
+    LARGE_INTEGER f;
+    if (!QueryPerformanceFrequency(&f))
+      return 0;
+    clock_freq = (1000000000.0 / f.QuadPart);
+  };
+
+  if (!QueryPerformanceCounter(&now))
+    return 0;
+  return (int64_t)(now.QuadPart * clock_freq);
+}
+
 int caml_num_rows_fd(int fd)
 {
   return -1;
