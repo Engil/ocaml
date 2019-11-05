@@ -71,26 +71,37 @@ void setup_evbuf()
 
 void setup_eventlog_file()
 {
-  char_os *filename;
+  char_os *filename = NULL;
   char_os *eventlog_filename;
   value tmp;
 
   eventlog_filename = caml_secure_getenv(T("OCAML_EVENTLOG_FILE"));
   if (eventlog_filename) {
-    tmp = caml_alloc_sprintf("%s.%d.eventlog",
-                           eventlog_filename, eventlog_startup_pid);
+    char *input =  caml_stat_strdup_of_os(eventlog_filename);
+
+    if (input != NULL) {
+      tmp = caml_alloc_sprintf("%s.%d.eventlog",
+                               input, eventlog_startup_pid);
+      caml_stat_free(input);
+      filename = caml_stat_strdup_os(String_val(tmp));
+    }
+
   } else {
     tmp = caml_alloc_sprintf("caml-eventlog-%d", eventlog_startup_pid);
+    filename = caml_stat_strdup_os(String_val(tmp));
   }
-  filename = caml_stat_strdup_os(String_val(tmp));
-  output = fopen_os(filename, T("wb"));
+
+  if (filename) {
+    output = fopen_os(filename, T("wb"));
+    caml_stat_free(filename);
+  }
+
   if (output) {
     fwrite(&header, sizeof(struct ctf_stream_header), 1, output);
     fflush(output);
   } else {
     caml_eventlog_enabled = 0;
   }
-  caml_stat_free(filename);
 }
 
 static void flush_events(FILE* out, struct event_buffer* eb)
@@ -152,7 +163,7 @@ static void teardown_eventlog()
 
 void caml_setup_eventlog()
 {
-  if (caml_secure_getenv("OCAML_EVENTLOG_ENABLED"))
+  if (caml_secure_getenv(T("OCAML_EVENTLOG_ENABLED")))
     caml_eventlog_enabled = 1;
   if (!caml_eventlog_enabled) return;
 
