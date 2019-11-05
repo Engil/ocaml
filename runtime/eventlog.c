@@ -88,12 +88,12 @@ void setup_eventlog_file()
       tmp = caml_alloc_sprintf("%s.%d.eventlog",
                                input, eventlog_startup_pid);
       caml_stat_free(input);
-      filename = caml_stat_strdup_os(String_val(tmp));
+      filename = caml_stat_strdup_to_os(String_val(tmp));
     }
 
   } else {
     tmp = caml_alloc_sprintf("caml-eventlog-%d", eventlog_startup_pid);
-    filename = caml_stat_strdup_os(String_val(tmp));
+    filename = caml_stat_strdup_to_os(String_val(tmp));
   }
 
   if (filename) {
