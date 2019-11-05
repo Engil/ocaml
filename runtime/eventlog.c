@@ -71,11 +71,11 @@ void setup_evbuf()
 
 void setup_eventlog_file()
 {
-  char *filename;
-  char *eventlog_filename;
+  char_os *filename;
+  char_os *eventlog_filename;
   value tmp;
 
-  eventlog_filename = caml_secure_getenv("OCAML_EVENTLOG_FILE");
+  eventlog_filename = caml_secure_getenv(T("OCAML_EVENTLOG_FILE"));
   if (eventlog_filename) {
     tmp = caml_alloc_sprintf("%s.%d.eventlog",
                            eventlog_filename, eventlog_startup_pid);
@@ -83,7 +83,7 @@ void setup_eventlog_file()
     tmp = caml_alloc_sprintf("caml-eventlog-%d", eventlog_startup_pid);
   }
   filename = caml_stat_strdup_os(String_val(tmp));
-  output = fopen_os(filename, "wb");
+  output = fopen_os(filename, T("wb"));
   if (output) {
     fwrite(&header, sizeof(struct ctf_stream_header), 1, output);
     fflush(output);
