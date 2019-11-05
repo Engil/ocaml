@@ -2,8 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <inttypes.h>
+#ifdef HAS_UNISTD
+#include <unistd.h>
+#endif
+#ifdef _WIN32
+#include <process.h>
+#endif
 #include "caml/alloc.h"
 #include "caml/eventlog.h"
 #include "caml/misc.h"
@@ -168,7 +173,11 @@ void caml_setup_eventlog()
   if (!caml_eventlog_enabled) return;
 
   eventlog_startup_timestamp = caml_time_counter();
+#ifdef _WIN32
+  eventlog_startup_pid = _getpid();
+#else
   eventlog_startup_pid = getpid();
+#endif
   setup_eventlog_file();
 
   atexit(&teardown_eventlog);
