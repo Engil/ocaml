@@ -429,27 +429,47 @@ char *caml_secure_getenv (char const *var)
 #endif
 }
 
+#if defined(__APPLE__)
+
+#include <mach/mach_time.h>
+
 int64_t caml_time_counter(void)
 {
-#if defined(_POSIX_TIMERS)                      \
+  static mach_timebase_info_data_t time_base = {0};
+
+  if (time_base.denom == 0) {
+    if (mach_timebase_info (&time_base) != KERN_SUCCESS)
+      return 0;
+
+    if (time_base.denom == 0)
+      return 0;
+  }
+
+  uint64_t now = mach_absolute_time ();
+  return (int64_t)((now * time_base.numer) / time_base.denom);
+}
+
+#elif defined(_POSIX_TIMERS)                      \
   && defined(_POSIX_MONOTONIC_CLOCK)            \
   && _POSIX_MONOTONIC_CLOCK != (-1)
 
+int64_t caml_time_counter(void)
+{
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   return
     (int64_t)t.tv_sec  * (int64_t)1000000000 +
     (int64_t)t.tv_nsec;
-#elif defined(HAS_GETTIMEOFDAY)
-  struct timeval t;
-  gettimeofday(&t, 0);
-  return
-    (int64_t)t.tv_sec  * (int64_t)1000000000 +
-    (int64_t)t.tv_usec * (int64_t)1000;
-#else
-# error "No timesource available"
-#endif
 }
+
+#else
+
+int64 caml_time_counter(void)
+{
+  return 0;
+}
+
+#endif
 
 int caml_num_rows_fd(int fd)
 {

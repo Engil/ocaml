@@ -3,16 +3,16 @@
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
-#ifdef HAS_UNISTD
-#include <unistd.h>
-#endif
-#ifdef _WIN32
-#include <process.h>
-#endif
 #include "caml/alloc.h"
 #include "caml/eventlog.h"
 #include "caml/misc.h"
 #include "caml/osdeps.h"
+
+#ifdef HAS_UNISTD
+#include <unistd.h>
+#elif _WIN32
+#include <process.h>
+#endif
 
 #define CTF_MAGIC 0xc1fc1fc1
 #define CAML_TRACE_VERSION 0x1
