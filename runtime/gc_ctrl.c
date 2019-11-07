@@ -522,14 +522,17 @@ CAMLprim value caml_gc_set(value v)
 
 CAMLprim value caml_gc_minor(value v)
 {
+  value exn;
+
   CAML_INSTR_SETUP (tmr, "");
   caml_ev_begin(EV_EXPLICIT_GC_MINOR);
   CAMLassert (v == Val_unit);
   caml_request_minor_gc ();
   // call the gc and call finalisers
-  caml_process_pending_actions();
+  exn = caml_process_pending_actions_exn();
   CAML_INSTR_TIME (tmr, "explicit/gc_minor");
   caml_ev_end(EV_EXPLICIT_GC_MINOR);
+  caml_raise_if_exception(exn);
   return Val_unit;
 }
 
@@ -550,6 +553,8 @@ static void test_and_compact (void)
 
 CAMLprim value caml_gc_major(value v)
 {
+  value exn;
+
   CAML_INSTR_SETUP (tmr, "");
   caml_ev_begin(EV_EXPLICIT_GC_MAJOR);
   CAMLassert (v == Val_unit);
@@ -558,14 +563,17 @@ CAMLprim value caml_gc_major(value v)
   caml_finish_major_cycle ();
   test_and_compact ();
   // call finalisers
-  caml_process_pending_actions();
+  exn = caml_process_pending_actions_exn();
   caml_ev_end(EV_EXPLICIT_GC_MAJOR);
   CAML_INSTR_TIME (tmr, "explicit/gc_major");
+  caml_raise_if_exception(exn);
   return Val_unit;
 }
 
 CAMLprim value caml_gc_full_major(value v)
 {
+  value exn;
+
   CAML_INSTR_SETUP (tmr, "");
   caml_ev_begin(EV_EXPLICIT_GC_FULL_MAJOR);
   CAMLassert (v == Val_unit);
@@ -573,14 +581,18 @@ CAMLprim value caml_gc_full_major(value v)
   caml_empty_minor_heap ();
   caml_finish_major_cycle ();
   // call finalisers
-  caml_process_pending_actions();
+  exn = caml_process_pending_actions_exn();
+  if (Is_exception_result(exn)) goto cleanup;
   caml_empty_minor_heap ();
   caml_finish_major_cycle ();
   test_and_compact ();
   // call finalisers
-  caml_process_pending_actions();
+  exn = caml_process_pending_actions_exn();
+
+cleanup:
   CAML_INSTR_TIME (tmr, "explicit/gc_full_major");
   caml_ev_end(EV_EXPLICIT_GC_FULL_MAJOR);
+  caml_raise_if_exception(exn);
   return Val_unit;
 }
 
