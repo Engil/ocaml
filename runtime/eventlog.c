@@ -227,6 +227,9 @@ void caml_ev_counter(ev_gc_counter counter, uint32_t val)
 
 void caml_ev_alloc(uintnat sz)
 {
+  if (!caml_eventlog_enabled) return;
+  if (eventlog_paused) return;
+
   if (sz < 10) {
     ++alloc_buckets[sz];
   } else if (sz < 100) {
@@ -239,6 +242,10 @@ void caml_ev_alloc(uintnat sz)
 void caml_ev_alloc_fold()
 {
   int i;
+
+  if (!caml_eventlog_enabled) return;
+  if (eventlog_paused) return;
+
   for (i = 1; i < 20; i++) {
     if (alloc_buckets[i] != 0) {
      post_event(0, 0, i, alloc_buckets[i], EV_ALLOC);

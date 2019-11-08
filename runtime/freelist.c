@@ -189,8 +189,7 @@ static header_t *nf_allocate (mlsize_t wo_sz)
     ++instr_size[19];
   }
 #endif /* CAML_INSTR */
-    if (caml_eventlog_enabled)
-      caml_ev_alloc(wo_sz);
+    caml_ev_alloc(wo_sz);
 
     CAMLassert (nf_prev != Val_NULL);
     /* Search from [nf_prev] to the end of the list. */
@@ -248,8 +247,7 @@ static void nf_init_merge (void)
     instr_size[i] = 0;
   }
 #endif /* CAML_INSTR */
-  if (caml_eventlog_enabled)
-    caml_ev_alloc_fold();
+  caml_ev_alloc_fold();
   nf_last_fragment = NULL;
   caml_fl_merge = Nf_head;
 #ifdef DEBUG
