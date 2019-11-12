@@ -480,6 +480,7 @@ static inline value caml_alloc_shr_aux (mlsize_t wosize, tag_t tag, int track,
     else
       return 0;
   }
+  caml_ev_alloc(wosize);
   hp = caml_fl_allocate (wosize);
   if (hp == NULL){
     new_block = expand_heap (wosize);
