@@ -247,7 +247,7 @@ static void nf_init_merge (void)
     instr_size[i] = 0;
   }
 #endif /* CAML_INSTR */
-  caml_ev_alloc_fold();
+  caml_ev_alloc_flush();
   nf_last_fragment = NULL;
   caml_fl_merge = Nf_head;
 #ifdef DEBUG

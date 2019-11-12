@@ -36,10 +36,6 @@ struct ctf_event_header {
   uint32_t id;
 };
 
-static uintnat alloc_buckets [20] =
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
-
 struct event {
   struct ctf_event_header header;
   uint8_t  phase; /* for GC events */
@@ -225,6 +221,14 @@ void caml_ev_counter(ev_gc_counter counter, uint32_t val)
   post_event(0, counter, 0, val, EV_COUNTER);
 }
 
+static uintnat alloc_buckets [20] =
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+/* This function records allocations in nf_allocate in given bucket sizes.
+   These buckets are meant to be flushed explicitly by the caller through the
+   caml_ev_alloc_flush function. Until then the buckets are just updated until
+   flushed.
+*/
 void caml_ev_alloc(uintnat sz)
 {
   if (!caml_eventlog_enabled) return;
@@ -239,7 +243,10 @@ void caml_ev_alloc(uintnat sz)
   }
 }
 
-void caml_ev_alloc_fold()
+/*  Note that this function does not trigger an actual disk flush, it just
+    pushes events in the event buffer.
+*/
+void caml_ev_alloc_flush()
 {
   int i;
 
