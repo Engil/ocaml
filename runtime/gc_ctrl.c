@@ -609,6 +609,8 @@ CAMLprim value caml_gc_major_slice (value v)
 
 CAMLprim value caml_gc_compaction(value v)
 {
+  value exn;
+
   CAML_INSTR_SETUP (tmr, "");
   caml_ev_begin(EV_EXPLICIT_GC_COMPACT);
   CAMLassert (v == Val_unit);
@@ -616,14 +618,18 @@ CAMLprim value caml_gc_compaction(value v)
   caml_empty_minor_heap ();
   caml_finish_major_cycle ();
   // call finalisers
-  caml_process_pending_actions();
+  exn = caml_process_pending_actions_exn();
+  if (Is_exception_result(exn)) goto cleanup;
   caml_empty_minor_heap ();
   caml_finish_major_cycle ();
   caml_compact_heap (-1);
   // call finalisers
-  caml_process_pending_actions();
+  exn = caml_process_pending_actions_exn();
+
+ cleanup:
   CAML_INSTR_TIME (tmr, "explicit/gc_compact");
   caml_ev_end(EV_EXPLICIT_GC_COMPACT);
+  caml_raise_if_exception(exn);
   return Val_unit;
 }
 
