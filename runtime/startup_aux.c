@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include "caml/backtrace.h"
 #include "caml/memory.h"
-#include "caml/eventlog.h"
 #include "caml/callback.h"
 #include "caml/major_gc.h"
 #ifndef NATIVE_CODE
