@@ -71,7 +71,4 @@ void caml_ev_alloc_flush(void);
 void caml_ev_flush(void);
 void caml_ev_disable(void);
 
-CAMLprim value caml_ev_resume(value v);
-CAMLprim value caml_ev_pause(value v);
-
 #endif
