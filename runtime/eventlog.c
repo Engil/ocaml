@@ -164,8 +164,14 @@ static void teardown_eventlog()
 
 void caml_setup_eventlog()
 {
-  if (caml_secure_getenv(T("OCAML_EVENTLOG_ENABLED")))
+  char_os *toggle = caml_secure_getenv(T("OCAML_EVENTLOG_ENABLED"));
+
+  if (toggle != NULL) {
     caml_eventlog_enabled = 1;
+    if (*toggle == 'p')
+      eventlog_paused = 1;
+  };
+
   if (!caml_eventlog_enabled) return;
 
   eventlog_startup_timestamp = caml_time_counter();
