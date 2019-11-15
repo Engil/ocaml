@@ -333,13 +333,6 @@ CMPBYT=$(ROOTDIR)/compilerlibs/ocamlcommon.cma \
 
 $(call byte_and_opt,cmpbyt,$(CMPBYT),)
 
-ifeq "$(RUNTIMEI)" "true"
-install::
-	$(INSTALL_PROG) \
-	  ocaml-instr-graph ocaml-instr-report \
-	  "$(INSTALL_BINDIR)/"
-endif
-
 CAMLTEX= $(ROOTDIR)/compilerlibs/ocamlcommon.cma \
 	$(ROOTDIR)/compilerlibs/ocamlbytecomp.cma \
 	$(ROOTDIR)/compilerlibs/ocamltoplevel.cma \

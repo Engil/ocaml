@@ -211,13 +211,6 @@ static void start_cycle (void)
 static value current_value = 0;
 static mlsize_t current_index = 0;
 
-/* For instrumentation */
-#ifdef CAML_INSTR
-#define INSTR(x) x
-#else
-#define INSTR(x) /**/
-#endif
-
 static void init_sweep_phase(void)
 {
   /* Phase_clean is done. */
@@ -254,7 +247,6 @@ Caml_inline value* mark_slice_darken(value *gray_vals_ptr,
 #else
   if (Is_block (child) && Is_in_heap (child)) {
 #endif
-    INSTR (++ *slice_pointers;)
     chd = Hd_val (child);
     if (Tag_hd (chd) == Forward_tag){
       value f = Forward_val (child);
@@ -414,9 +406,6 @@ static void mark_slice (intnat work)
         start = size < start ? size : start;
         end = size < end ? size : end;
         CAMLassert (end >= start);
-        INSTR (slice_fields += end - start;)
-        INSTR (if (size > end)
-                 CAML_INSTR_INT ("major/mark/slice/remain#", size - end);)
         for (i = start; i < end; i++){
           gray_vals_ptr = mark_slice_darken(gray_vals_ptr,v,i,
                                             /*in_ephemeron=*/ 0,
@@ -517,8 +506,6 @@ static void mark_slice (intnat work)
   gray_vals_cur = gray_vals_ptr;
   current_value = v;
   current_index = start;
-  INSTR (CAML_INSTR_INT ("major/mark/slice/fields#", slice_fields);)
-  INSTR (CAML_INSTR_INT ("major/mark/slice/pointers#", slice_pointers);)
 }
 
 /* Clean ephemerons */
@@ -592,26 +579,6 @@ static void sweep_slice (intnat work)
   }
 }
 
-#ifdef CAML_INSTR
-static char *mark_slice_name[] = {
-  /* 0 */ NULL,
-  /* 1 */ NULL,
-  /* 2 */ NULL,
-  /* 3 */ NULL,
-  /* 4 */ NULL,
-  /* 5 */ NULL,
-  /* 6 */ NULL,
-  /* 7 */ NULL,
-  /* 8 */ NULL,
-  /* 9 */ NULL,
-  /* 10 */  "major/mark_roots",
-  /* 11 */  "major/mark_main",
-  /* 12 */  "major/mark_weak1",
-  /* 13 */  "major/mark_weak2",
-  /* 14 */  "major/mark_final",
-};
-#endif
-
 /* The main entry point for the major GC. Called about once for each
    minor GC. [howmuch] is the amount of work to do:
    -1 if the GC is triggered automatically
@@ -683,8 +650,6 @@ void caml_major_collection_slice (intnat howmuch)
   */
 
   if (caml_major_slice_begin_hook != NULL) (*caml_major_slice_begin_hook) ();
-  CAML_INSTR_ALLOC (tmr);
-  CAML_INSTR_START (tmr, "major");
 
   p = (double) caml_allocated_words * 3.0 * (100 + caml_percent_free)
       / Caml_state->stat_heap_wsz / caml_percent_free / 2.0;
@@ -702,7 +667,6 @@ void caml_major_collection_slice (intnat howmuch)
     p_backlog = p - 0.3;
     p = 0.3;
   }
-  CAML_INSTR_INT ("major/work/extra#",
                   (uintnat) (caml_extra_heap_resources * 1000000));
 
   caml_gc_message (0x40, "ordered work = %"
@@ -771,7 +735,6 @@ void caml_major_collection_slice (intnat howmuch)
       /* We can only start a major GC cycle if the minor allocation arena
          is empty, otherwise we'd have to treat it as a set of roots. */
       start_cycle ();
-      CAML_INSTR_TIME (tmr, "major/roots");
     }
     p = 0;
     goto finished;
@@ -792,24 +755,19 @@ void caml_major_collection_slice (intnat howmuch)
   caml_gc_message (0x40, "computed work = %"
                    ARCH_INTNAT_PRINTF_FORMAT "d words\n", computed_work);
   if (caml_gc_phase == Phase_mark){
-    CAML_INSTR_INT ("major/work/mark#", computed_work);
     mark_slice (computed_work);
-    CAML_INSTR_TIME (tmr, mark_slice_name[caml_gc_subphase]);
     caml_gc_message (0x02, "!");
   }else if (caml_gc_phase == Phase_clean){
     clean_slice (computed_work);
     caml_gc_message (0x02, "%%");
   }else{
     CAMLassert (caml_gc_phase == Phase_sweep);
-    CAML_INSTR_INT ("major/work/sweep#", computed_work);
     sweep_slice (computed_work);
-    CAML_INSTR_TIME (tmr, "major/sweep");
     caml_gc_message (0x02, "$");
   }
 
   if (caml_gc_phase == Phase_idle){
     caml_compact_heap_maybe ();
-    CAML_INSTR_TIME (tmr, "major/check_and_compact");
   }
 
  finished:

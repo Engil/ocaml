@@ -81,26 +81,19 @@ intnat caml_darken_all_roots_slice (intnat work)
    ignored and [caml_darken_all_roots_slice] does nothing. */
 void caml_do_roots (scanning_action f, int do_globals)
 {
-  CAML_INSTR_SETUP (tmr, "major_roots");
   /* Global variables */
   f(caml_global_data, &caml_global_data);
-  CAML_INSTR_TIME (tmr, "major_roots/global");
   /* The stack and the local C roots */
   caml_do_local_roots(f, Caml_state->extern_sp, Caml_state->stack_high,
                       Caml_state->local_roots);
-  CAML_INSTR_TIME (tmr, "major_roots/local");
   /* Global C roots */
   caml_scan_global_roots(f);
-  CAML_INSTR_TIME (tmr, "major_roots/C");
   /* Finalised values */
   caml_final_do_roots (f);
-  CAML_INSTR_TIME (tmr, "major_roots/finalised");
   /* Memprof */
   caml_memprof_do_roots (f);
-  CAML_INSTR_TIME (tmr, "major_roots/memprof");
   /* Hook */
   if (caml_scan_roots_hook != NULL) (*caml_scan_roots_hook)(f);
-  CAML_INSTR_TIME (tmr, "major_roots/hook");
 }
 
 CAMLexport void caml_do_local_roots (scanning_action f, value *stack_low,

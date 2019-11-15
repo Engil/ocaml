@@ -361,7 +361,6 @@ intnat caml_darken_all_roots_slice (intnat work)
   static int do_resume = 0;
   static mlsize_t roots_count = 0;
   intnat remaining_work = work;
-  CAML_INSTR_SETUP (tmr, "");
 
   /* If the loop was started in a previous call, resume it. */
   if (do_resume) goto resume;
@@ -391,7 +390,6 @@ intnat caml_darken_all_roots_slice (intnat work)
 
  suspend:
   /* Do this in both cases. */
-  CAML_INSTR_TIME (tmr, "major/mark/global_roots_slice");
   return remaining_work;
 }
 
@@ -400,7 +398,6 @@ void caml_do_roots (scanning_action f, int do_globals)
   int i, j;
   value * glob;
   link *lnk;
-  CAML_INSTR_SETUP (tmr, "major_roots");
 
   if (do_globals){
     /* The global roots */
@@ -419,24 +416,18 @@ void caml_do_roots (scanning_action f, int do_globals)
       }
     }
   }
-  CAML_INSTR_TIME (tmr, "major_roots/dynamic_global");
   /* The stack and local roots */
   caml_do_local_roots(f, Caml_state->bottom_of_stack,
                       Caml_state->last_return_address, Caml_state->gc_regs,
                       Caml_state->local_roots);
-  CAML_INSTR_TIME (tmr, "major_roots/local");
   /* Global C roots */
   caml_scan_global_roots(f);
-  CAML_INSTR_TIME (tmr, "major_roots/C");
   /* Finalised values */
   caml_final_do_roots (f);
-  CAML_INSTR_TIME (tmr, "major_roots/finalised");
   /* Memprof */
   caml_memprof_do_roots (f);
-  CAML_INSTR_TIME (tmr, "major_roots/memprof");
   /* Hook */
   if (caml_scan_roots_hook != NULL) (*caml_scan_roots_hook)(f);
-  CAML_INSTR_TIME (tmr, "major_roots/hook");
 }
 
 void caml_do_local_roots(scanning_action f, char * bottom_of_stack,
