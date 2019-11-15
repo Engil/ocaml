@@ -463,10 +463,10 @@ CAMLexport void caml_gc_dispatch (void)
   CAML_INSTR_INT ("alloc/jump#", caml_instr_alloc_jump);
   caml_instr_alloc_jump = 0;
 #endif
-  if (caml_eventlog_enabled) {
+  CAML_EVENTLOG({
     caml_ev_counter(EV_C_ALLOC_JUMP, caml_instr_alloc_jump);
     caml_instr_alloc_jump =  0;
-  }
+  });
 
   if (trigger == Caml_state->young_alloc_start
       || Caml_state->requested_minor_gc) {
