@@ -47,8 +47,8 @@ struct event {
 static FILE* output;
 static uintnat eventlog_startup_timestamp = 0;
 static uint32_t eventlog_startup_pid = 0;
-static uintnat eventlog_paused = 0;
 
+uintnat caml_eventlog_paused = 0;
 uintnat caml_eventlog_enabled = 0;
 
 #define EVENT_BUF_SIZE 4096
@@ -169,7 +169,7 @@ void caml_setup_eventlog()
   if (toggle != NULL) {
     caml_eventlog_enabled = 1;
     if (*toggle == 'p')
-      eventlog_paused = 1;
+      caml_eventlog_paused = 1;
   };
 
   if (!caml_eventlog_enabled) return;
@@ -192,7 +192,7 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
   struct event* ev;
 
   if (!caml_eventlog_enabled) return;
-  if (eventlog_paused) return;
+  if (caml_eventlog_paused) return;
   if (!evbuf) setup_evbuf();
 
   i = evbuf->ev_generated;
@@ -238,7 +238,7 @@ static uintnat alloc_buckets [20] =
 void caml_ev_alloc(uintnat sz)
 {
   if (!caml_eventlog_enabled) return;
-  if (eventlog_paused) return;
+  if (caml_eventlog_paused) return;
 
   if (sz < 10) {
     ++alloc_buckets[sz];
@@ -257,7 +257,7 @@ void caml_ev_alloc_flush()
   int i;
 
   if (!caml_eventlog_enabled) return;
-  if (eventlog_paused) return;
+  if (caml_eventlog_paused) return;
 
   for (i = 1; i < 20; i++) {
     if (alloc_buckets[i] != 0) {
@@ -282,7 +282,7 @@ CAMLprim value caml_ev_resume(value v)
 {
   CAMLassert(v == Val_unit);
   if (caml_eventlog_enabled)
-    eventlog_paused = 0;
+    caml_eventlog_paused = 0;
   return Val_unit;
 }
 
@@ -290,7 +290,7 @@ CAMLprim value caml_ev_pause(value v)
 {
   CAMLassert(v == Val_unit);
   if (caml_eventlog_enabled) {
-    eventlog_paused = 1;
+    caml_eventlog_paused = 1;
     if (evbuf)
      flush_events(output, evbuf);
   };

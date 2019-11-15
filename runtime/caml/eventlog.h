@@ -63,6 +63,9 @@ typedef enum {
 } ev_gc_counter;
 
 uintnat caml_eventlog_enabled;
+uintnat caml_eventlog_paused;
+
+#define CAML_EVENTLOG(f) if (caml_eventlog_enabled && !caml_eventlog_paused) (f)
 
 void caml_setup_eventlog(void);
 void caml_ev_begin(ev_gc_phase phase);

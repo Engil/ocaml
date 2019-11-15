@@ -92,6 +92,8 @@ static char *instr_name [20] = {
 uintnat caml_instr_alloc_jump = 0;
 /* number of pointers followed to allocate from the free set */
 
+#define EV_ALLOC_JUMP(n) (caml_instr_alloc_jump += (n))
+
 /********************* next-fit allocation policy *********************/
 
 /* The free-list is kept sorted by increasing addresses.
@@ -201,8 +203,7 @@ static header_t *nf_allocate (mlsize_t wo_sz)
       }
       prev = cur;
       cur = Next_small (prev);
-      if (caml_eventlog_enabled)
-        ++ caml_instr_alloc_jump;
+      CAML_EVENTLOG(EV_ALLOC_JUMP (1));
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
@@ -217,13 +218,10 @@ static header_t *nf_allocate (mlsize_t wo_sz)
       }
       prev = cur;
       cur = Next_small (prev);
-      if (caml_eventlog_enabled)
-        ++ caml_instr_alloc_jump;
+      CAML_EVENTLOG(EV_ALLOC_JUMP (1));
 #ifdef CAML_INSTR
       ++ caml_instr_alloc_jump;
 #endif
-      if (caml_eventlog_enabled)
-        ++  caml_instr_alloc_jump;
     }
     /* No suitable block was found. */
     return NULL;
@@ -1078,6 +1076,7 @@ static large_free_block **bf_search (mlsize_t wosz)
   while (1){
     cur = *p;
     INSTR_alloc_jump (1);
+    CAML_EVENTLOG(EV_ALLOC_JUMP (1));
     if (cur == NULL) break;
     cursz = bf_large_wosize (cur);
     if (cursz == wosz){
@@ -1107,6 +1106,7 @@ static large_free_block **bf_search_best (mlsize_t wosz, mlsize_t *next_lower)
   while (1){
     cur = *p;
     INSTR_alloc_jump (1);
+    CAML_EVENTLOG(EV_ALLOC_JUMP (1));
     if (cur == NULL){
       *next_lower = lowsz;
       break;
@@ -1152,6 +1152,7 @@ static void bf_splay (mlsize_t wosz)
       /* zig */
       y = x->left;
       INSTR_alloc_jump (1);
+      CAML_EVENTLOG(EV_ALLOC_JUMP (1));
       if (y == NULL) break;
       if (bf_large_wosize (y) > wosz){
         /* zig-zig: rotate right */
@@ -1160,6 +1161,7 @@ static void bf_splay (mlsize_t wosz)
         x = y;
         y = x->left;
         INSTR_alloc_jump (2);
+        CAML_EVENTLOG(EV_ALLOC_JUMP (2));
         if (y == NULL) break;
       }
       /* link right */
@@ -1171,6 +1173,7 @@ static void bf_splay (mlsize_t wosz)
       /* zag */
       y = x->right;
       INSTR_alloc_jump (1);
+      CAML_EVENTLOG(EV_ALLOC_JUMP (1));
       if (y == NULL) break;
       if (bf_large_wosize (y) < wosz){
         /* zag-zag : rotate left */
@@ -1179,6 +1182,7 @@ static void bf_splay (mlsize_t wosz)
         x = y;
         y = x->right;
         INSTR_alloc_jump (2);
+        CAML_EVENTLOG(EV_ALLOC_JUMP (2));
         if (y == NULL) break;
       }
       /* link left */
@@ -1193,6 +1197,7 @@ static void bf_splay (mlsize_t wosz)
   x->left = left_top;
   x->right = right_top;
   INSTR_alloc_jump (2);
+  CAML_EVENTLOG(EV_ALLOC_JUMP (2));
   bf_large_tree = x;
 }
 
@@ -1209,11 +1214,13 @@ static void bf_splay_least (large_free_block **p)
 
   x = *p;
   INSTR_alloc_jump (1);
+  CAML_EVENTLOG(EV_ALLOC_JUMP (1));
   CAMLassert (x != NULL);
   while (1){
     /* We are always in the zig case. */
     y = x->left;
     INSTR_alloc_jump (1);
+    CAML_EVENTLOG(EV_ALLOC_JUMP (1));
     if (y == NULL) break;
     /* And in the zig-zig case. rotate right */
     x->left = y->right;
@@ -1221,6 +1228,7 @@ static void bf_splay_least (large_free_block **p)
     x = y;
     y = x->left;
     INSTR_alloc_jump (2);
+    CAML_EVENTLOG(EV_ALLOC_JUMP (2));
     if (y == NULL) break;
     /* link right */
     *right_bottom = x;
@@ -1231,6 +1239,7 @@ static void bf_splay_least (large_free_block **p)
   CAMLassert (x->left == NULL);
   *right_bottom = x->right;
   INSTR_alloc_jump (1);
+  CAML_EVENTLOG(EV_ALLOC_JUMP (1));
   x->right = right_top;
   *p = x;
 }
@@ -1243,11 +1252,13 @@ static void bf_remove_node (large_free_block **p)
 
   x = *p;
   INSTR_alloc_jump (1);
+  CAML_EVENTLOG(EV_ALLOC_JUMP (1));
   if (x == NULL) return;
   if (x == bf_large_least) bf_large_least = NULL;
   l = x->left;
   r = x->right;
   INSTR_alloc_jump (2);
+  CAML_EVENTLOG(EV_ALLOC_JUMP (2));
   if (l == NULL){
     *p = r;
   }else if (r == NULL){
@@ -1269,6 +1280,7 @@ static void bf_insert_block (large_free_block *n)
   large_free_block **p = bf_search (sz);
   large_free_block *x = *p;
   INSTR_alloc_jump (1);
+  CAML_EVENTLOG(EV_ALLOC_JUMP (1));
 
   if (bf_large_least != NULL){
     mlsize_t least_sz = bf_large_wosize (bf_large_least);
@@ -1301,6 +1313,7 @@ static void bf_insert_block (large_free_block *n)
     x->prev->next = n;
     x->prev = n;
     INSTR_alloc_jump (2);
+    CAML_EVENTLOG(EV_ALLOC_JUMP (2));
     bf_splay (sz);
   }
 }
