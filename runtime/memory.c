@@ -513,7 +513,6 @@ static inline value caml_alloc_shr_aux (mlsize_t wosize, tag_t tag, int track,
                                   profinfo));
   caml_allocated_words += Whsize_wosize (wosize);
   if (caml_allocated_words > Caml_state->minor_heap_wsz){
-    CAML_INSTR_INT ("request_major/alloc_shr@", 1);
     caml_ev_counter (EV_C_REQUEST_MAJOR_ALLOC_SHR, 1);
     caml_request_major_slice ();
   }
@@ -621,7 +620,6 @@ CAMLexport void caml_adjust_gc_speed (mlsize_t res, mlsize_t max)
   if (res > max) res = max;
   caml_extra_heap_resources += (double) res / (double) max;
   if (caml_extra_heap_resources > 1.0){
-    CAML_INSTR_INT ("request_major/adjust_gc_speed_1@", 1);
     caml_ev_counter (EV_C_REQUEST_MAJOR_ADJUST_GC_SPEED, 1);
     caml_extra_heap_resources = 1.0;
     caml_request_major_slice ();

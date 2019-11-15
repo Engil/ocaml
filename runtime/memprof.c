@@ -462,7 +462,6 @@ void caml_memprof_track_young(tag_t tag, uintnat wosize, int from_caml)
   /* We can now restore the minor heap in the state needed by
      [Alloc_small_aux]. */
   if (Caml_state->young_ptr - whsize < Caml_state->young_trigger) {
-    CAML_INSTR_INT ("force_minor/memprof@", 1);
     caml_gc_dispatch();
   }
 
