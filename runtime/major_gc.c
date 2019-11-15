@@ -255,6 +255,7 @@ static inline value* mark_slice_darken(value *gray_vals_ptr,
   if (Is_block (child) && Is_in_heap (child)) {
 #endif
     INSTR (++ *slice_pointers;)
+    CAML_EVENTLOG (++ *slice_pointers);
     chd = Hd_val (child);
     if (Tag_hd (chd) == Forward_tag){
       value f = Forward_val (child);
@@ -389,10 +390,8 @@ static void mark_slice (intnat work)
   value v;
   header_t hd;
   mlsize_t size, i, start, end; /* [start] is a local copy of [current_index] */
-#ifdef CAML_INSTR
-  int slice_fields = 0;
-#endif
-  int slice_pointers = 0; /** gcc removes it when not in CAML_INSTR */
+  int slice_fields = 0; /** eventlog counters */
+  int slice_pointers = 0;
 
   caml_gc_message (0x40, "Marking %"ARCH_INTNAT_PRINTF_FORMAT"d words\n", work);
   caml_gc_message (0x40, "Subphase = %d\n", caml_gc_subphase);
@@ -415,6 +414,7 @@ static void mark_slice (intnat work)
         end = size < end ? size : end;
         CAMLassert (end >= start);
         INSTR (slice_fields += end - start;)
+        CAML_EVENTLOG (slice_fields += end - start);
         INSTR (if (size > end)
                  CAML_INSTR_INT ("major/mark/slice/remain", size - end);)
         if (size > end)
@@ -525,7 +525,9 @@ static void mark_slice (intnat work)
   current_value = v;
   current_index = start;
   INSTR (CAML_INSTR_INT ("major/mark/slice/fields#", slice_fields);)
+  caml_ev_counter(EV_C_MAJOR_MARK_SLICE_FIELDS, slice_fields);
   INSTR (CAML_INSTR_INT ("major/mark/slice/pointers#", slice_pointers);)
+  caml_ev_counter(EV_C_MAJOR_MARK_SLICE_POINTERS, slice_pointers);
 }
 
 /* Clean ephemerons */
