@@ -1,0 +1,6 @@
+export OCAML_EVENTLOG_ENABLED=1
+export OCAML_EVENTLOG_FILE=${program}
+${program} > ${output} &
+pid=$!
+wait $pid
+rm ${program}.$pid.eventlog
