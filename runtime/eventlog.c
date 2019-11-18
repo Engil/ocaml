@@ -147,11 +147,11 @@ static void teardown_eventlog()
   if (evbuf) {
     flush_events(Caml_state->eventlog_out, evbuf);
     caml_stat_free(evbuf);
-    evbuf = 0;
+    evbuf = NULL;
   }
   if (Caml_state->eventlog_out) {
     fclose(Caml_state->eventlog_out);
-    Caml_state->eventlog_out = 0;
+    Caml_state->eventlog_out = NULL;
   }
 }
 
