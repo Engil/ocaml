@@ -24,14 +24,14 @@ CAMLprim value unix_fork(value unit)
 {
   int ret;
 
-  CAML_EVENTLOG(caml_ev_flush());
+  caml_ev_flush();
 
   ret = fork();
   if (ret == -1) uerror("fork", Nothing);
 
   CAML_EVENTLOG({
       if (ret == 0)
-        caml_ev_disable();
+        caml_eventlog_disable();
   });
 
   if (caml_debugger_in_use)

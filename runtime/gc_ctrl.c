@@ -672,7 +672,7 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
   caml_percent_max = norm_pmax (percent_m);
   caml_init_major_heap (major_heap_size);
   caml_major_window = norm_window (window);
-  caml_setup_eventlog();
+  caml_eventlog_init();
   caml_custom_major_ratio = norm_custom_maj (custom_maj);
   caml_custom_minor_ratio = norm_custom_min (custom_min);
   caml_custom_minor_max_bsz = custom_bsz;

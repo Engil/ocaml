@@ -155,7 +155,7 @@ static void teardown_eventlog()
   }
 }
 
-void caml_setup_eventlog()
+void caml_eventlog_init()
 {
   char_os *toggle = caml_secure_getenv(T("OCAML_EVENTLOG_ENABLED"));
 
@@ -262,15 +262,19 @@ void caml_ev_alloc_flush()
 
 void caml_ev_flush()
 {
-  fflush(Caml_state->eventlog_out);
+  if (!Caml_state->eventlog_enabled) return;
+  if (Caml_state->eventlog_paused) return;
+
+  if (Caml_state->eventlog_out)
+    fflush(Caml_state->eventlog_out);
 }
 
-void caml_ev_disable()
+void caml_eventlog_disable()
 {
   teardown_eventlog();
 }
 
-CAMLprim value caml_ev_resume(value v)
+CAMLprim value caml_eventlog_resume(value v)
 {
   CAMLassert(v == Val_unit);
   if (Caml_state->eventlog_enabled)
@@ -278,7 +282,7 @@ CAMLprim value caml_ev_resume(value v)
   return Val_unit;
 }
 
-CAMLprim value caml_ev_pause(value v)
+CAMLprim value caml_eventlog_pause(value v)
 {
   CAMLassert(v == Val_unit);
   if (Caml_state->eventlog_enabled) {

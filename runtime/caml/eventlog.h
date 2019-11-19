@@ -64,13 +64,14 @@ typedef enum {
 
 #define CAML_EVENTLOG(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) (f)
 
-void caml_setup_eventlog(void);
+void caml_eventlog_init(void);
+void caml_eventlog_disable(void);
+
 void caml_ev_begin(ev_gc_phase phase);
 void caml_ev_end(ev_gc_phase phase);
 void caml_ev_counter(ev_gc_counter counter, uint32_t val);
 void caml_ev_alloc(uintnat size);
 void caml_ev_alloc_flush(void);
 void caml_ev_flush(void);
-void caml_ev_disable(void);
 
 #endif
