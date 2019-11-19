@@ -229,7 +229,7 @@ void caml_ev_counter(ev_gc_counter counter, uint32_t val)
 static uintnat alloc_buckets [20] =
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-/* This function records allocations in nf_allocate in given bucket sizes.
+/* This function records allocations in caml_alloc_shr_aux in given bucket sizes.
    These buckets are meant to be flushed explicitly by the caller through the
    caml_ev_alloc_flush function. Until then the buckets are just updated until
    flushed.
