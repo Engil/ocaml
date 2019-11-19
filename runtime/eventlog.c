@@ -205,6 +205,12 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
   evbuf->ev_generated = i + 1;
 }
 
+/* General note about the public API for the eventlog framework
+   caml_ev_* functions are no-op when called with the eventlog framework
+   paused or disabled.
+   caml_eventlog_* functions on the other hand may introduce side effects
+   (such as write buffer flushes, or side effects in the eventlog internals.)
+*/
 void caml_ev_begin(ev_gc_phase phase)
 {
   post_event(phase, 0, 0, 0, EV_ENTRY);
