@@ -91,12 +91,18 @@ void setup_eventlog_file()
   }
 
   if (Caml_state->eventlog_out) {
-    fwrite(&header, sizeof(struct ctf_stream_header), 1, Caml_state->eventlog_out);
+    int ret =  fwrite(&header, sizeof(struct ctf_stream_header), 1, Caml_state->eventlog_out);
+    if (ret != 1)
+      caml_eventlog_disable();
     fflush(Caml_state->eventlog_out);
   } else {
     Caml_state->eventlog_enabled = 0;
   }
 }
+
+#define FWRITE_EV(item, size) \
+  if (fwrite(item, size, 1, out) != 1) \
+    goto fwrite_failure;
 
 static void flush_events(FILE* out, struct event_buffer* eb)
 {
@@ -112,23 +118,23 @@ static void flush_events(FILE* out, struct event_buffer* eb)
     struct event ev = eb->events[i];
     ev.header.pid = Caml_state->eventlog_startup_pid;
 
-    fwrite(&ev.header, sizeof(struct ctf_event_header), 1, out);
+    FWRITE_EV(&ev.header, sizeof(struct ctf_event_header));
 
     switch (ev.header.id)
     {
     case EV_ENTRY:
-      fwrite(&ev.phase, sizeof(uint8_t), 1, out);
+      FWRITE_EV(&ev.phase, sizeof(uint8_t));
       break;
     case EV_EXIT:
-      fwrite(&ev.phase, sizeof(uint8_t), 1, out);
+      FWRITE_EV(&ev.phase, sizeof(uint8_t));
       break;
     case EV_COUNTER:
-      fwrite(&ev.count, sizeof(uint32_t), 1, out);
-      fwrite(&ev.counter_kind, sizeof(uint8_t), 1, out);
+      FWRITE_EV(&ev.count, sizeof(uint32_t));
+      FWRITE_EV(&ev.counter_kind, sizeof(uint8_t));
       break;
     case EV_ALLOC:
-      fwrite(&ev.count, sizeof(uint32_t), 1, out);
-      fwrite(&ev.alloc_bucket, sizeof(uint8_t), 1, out);
+      FWRITE_EV(&ev.count, sizeof(uint32_t));
+      FWRITE_EV(&ev.alloc_bucket, sizeof(uint8_t));
       break;
     default:
       break;
@@ -138,8 +144,16 @@ static void flush_events(FILE* out, struct event_buffer* eb)
   uint64_t flush_duration =
     (caml_time_counter() - Caml_state->eventlog_startup_timestamp) - ev_flush.timestamp;
 
-  fwrite(&ev_flush, sizeof(struct ctf_event_header), 1, out);
-  fwrite(&flush_duration, sizeof(uint64_t), 1, out);
+  FWRITE_EV(&ev_flush, sizeof(struct ctf_event_header));
+  FWRITE_EV(&flush_duration, sizeof(uint64_t));
+
+  return;
+
+ fwrite_failure:
+  /* on event flush failure, shut down eventlog. */
+  caml_eventlog_disable();
+  return;
+
 }
 
 static void teardown_eventlog()
@@ -277,6 +291,7 @@ void caml_ev_flush()
 
 void caml_eventlog_disable()
 {
+  Caml_state->eventlog_enabled = 0;
   teardown_eventlog();
 }
 
