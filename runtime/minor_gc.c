@@ -402,6 +402,7 @@ void caml_empty_minor_heap (void)
       }
     }
     caml_ev_end(EV_MINOR_UPDATE_WEAK);
+    caml_ev_begin(EV_MINOR_FINALIZED);
     Caml_state->stat_minor_words +=
       Caml_state->young_alloc_end - Caml_state->young_ptr;
     caml_gc_clock +=
@@ -414,7 +415,6 @@ void caml_empty_minor_heap (void)
     Caml_state->extra_heap_resources_minor = 0;
     caml_gc_message (0x02, ">");
     Caml_state->in_minor_collection = 0;
-    caml_ev_begin(EV_MINOR_FINALIZED);
     caml_final_empty_young ();
     caml_ev_end(EV_MINOR_FINALIZED);
     Caml_state->stat_promoted_words += caml_allocated_words - prev_alloc_words;
