@@ -38,10 +38,10 @@ struct ctf_event_header {
 
 struct event {
   struct ctf_event_header header;
-  uint8_t  phase; /* for GC events */
-  uint8_t  counter_kind; /* misc counter name */
+  uint16_t  phase; /* for GC events */
+  uint16_t  counter_kind; /* misc counter name */
   uint8_t  alloc_bucket; /* for alloc counters */
-  uint32_t count; /* for misc counters */
+  uint64_t count; /* for misc counters */
 };
 
 #define EVENT_BUF_SIZE 4096
@@ -123,17 +123,17 @@ static void flush_events(FILE* out, struct event_buffer* eb)
     switch (ev.header.id)
     {
     case EV_ENTRY:
-      FWRITE_EV(&ev.phase, sizeof(uint8_t));
+      FWRITE_EV(&ev.phase, sizeof(uint16_t));
       break;
     case EV_EXIT:
-      FWRITE_EV(&ev.phase, sizeof(uint8_t));
+      FWRITE_EV(&ev.phase, sizeof(uint16_t));
       break;
     case EV_COUNTER:
-      FWRITE_EV(&ev.count, sizeof(uint32_t));
-      FWRITE_EV(&ev.counter_kind, sizeof(uint8_t));
+      FWRITE_EV(&ev.count, sizeof(uint64_t));
+      FWRITE_EV(&ev.counter_kind, sizeof(uint16_t));
       break;
     case EV_ALLOC:
-      FWRITE_EV(&ev.count, sizeof(uint32_t));
+      FWRITE_EV(&ev.count, sizeof(uint64_t));
       FWRITE_EV(&ev.alloc_bucket, sizeof(uint8_t));
       break;
     default:
@@ -193,7 +193,7 @@ void caml_eventlog_init()
 }
 
 static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
-                       uint8_t bucket, uint32_t count, ev_type ty)
+                       uint8_t bucket, uint64_t count, ev_type ty)
 {
   uintnat i;
   struct event* ev;
@@ -235,20 +235,19 @@ void caml_ev_end(ev_gc_phase phase)
   post_event(phase, 0, 0, 0, EV_EXIT);
 }
 
-void caml_ev_counter(ev_gc_counter counter, uint32_t val)
+void caml_ev_counter(ev_gc_counter counter, uint64_t val)
 {
   post_event(0, counter, 0, val, EV_COUNTER);
 }
 
-static uintnat alloc_buckets [20] =
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static uint64_t alloc_buckets [20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /* This function records allocations in caml_alloc_shr_aux in given bucket sizes.
    These buckets are meant to be flushed explicitly by the caller through the
    caml_ev_alloc_flush function. Until then the buckets are just updated until
    flushed.
 */
-void caml_ev_alloc(uintnat sz)
+void caml_ev_alloc(uint64_t sz)
 {
   if (!Caml_state->eventlog_enabled) return;
   if (Caml_state->eventlog_paused) return;
@@ -274,7 +273,7 @@ void caml_ev_alloc_flush()
 
   for (i = 1; i < 20; i++) {
     if (alloc_buckets[i] != 0) {
-     post_event(0, 0, i, alloc_buckets[i], EV_ALLOC);
+      post_event(0, 0, i, alloc_buckets[i], EV_ALLOC);
     };
     alloc_buckets[i] = 0;
   }
