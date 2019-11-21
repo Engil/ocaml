@@ -64,6 +64,15 @@ typedef enum {
 
 #define CAML_EVENTLOG(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) (f)
 
+/* General note about the public API for the eventlog framework
+   caml_ev_* functions are no-op when called with the eventlog framework
+   paused or disabled.
+   caml_eventlog_* functions on the other hand may introduce side effects
+   (such as write buffer flushes, or side effects in the eventlog internals.)
+
+   All these functions should be called while holding the runtime lock.
+*/
+
 void caml_eventlog_init(void);
 void caml_eventlog_disable(void);
 
