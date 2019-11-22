@@ -187,7 +187,9 @@ void caml_eventlog_init()
 #else
   Caml_state->eventlog_startup_pid = getpid();
 #endif
+
   setup_eventlog_file();
+  setup_evbuf();
 
   atexit(&teardown_eventlog);
 }
@@ -200,7 +202,6 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
 
   if (!Caml_state->eventlog_enabled) return;
   if (Caml_state->eventlog_paused) return;
-  if (!evbuf) setup_evbuf();
 
   i = evbuf->ev_generated;
   CAMLassert(i <= EVENT_BUF_SIZE);
