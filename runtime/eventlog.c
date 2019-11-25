@@ -179,6 +179,8 @@ void caml_eventlog_init()
       Caml_state->eventlog_paused = 1;
   };
 
+  Caml_state->eventlog_enabled = 0;
+
   if (!Caml_state->eventlog_enabled) return;
 
   Caml_state->eventlog_startup_timestamp = caml_time_counter();
