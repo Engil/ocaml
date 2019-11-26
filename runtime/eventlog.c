@@ -53,7 +53,7 @@ struct event_buffer {
 
 static struct event_buffer* evbuf;
 
-void setup_evbuf()
+static void setup_evbuf()
 {
   CAMLassert(!evbuf);
   evbuf = caml_stat_alloc_noexc(sizeof(*evbuf));
@@ -64,7 +64,7 @@ void setup_evbuf()
   evbuf->ev_generated = 0;
 }
 
-void setup_eventlog_file()
+static void setup_eventlog_file()
 {
   CAMLparam0();
   char_os *filename = NULL;
