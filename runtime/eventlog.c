@@ -6,6 +6,7 @@
 #include "caml/alloc.h"
 #include "caml/eventlog.h"
 #include "caml/misc.h"
+#include "caml/memory.h"
 #include "caml/osdeps.h"
 
 #ifdef HAS_UNISTD
@@ -65,9 +66,10 @@ void setup_evbuf()
 
 void setup_eventlog_file()
 {
+  CAMLparam0();
   char_os *filename = NULL;
   char_os *eventlog_filename;
-  value tmp;
+  CAMLlocal1 (tmp);
 
   eventlog_filename = caml_secure_getenv(T("OCAML_EVENTLOG_FILE"));
   if (eventlog_filename) {
@@ -98,6 +100,8 @@ void setup_eventlog_file()
   } else {
     Caml_state->eventlog_enabled = 0;
   }
+
+  CAMLreturn0;
 }
 
 #define FWRITE_EV(item, size) \
