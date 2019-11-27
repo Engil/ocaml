@@ -62,7 +62,7 @@ typedef enum {
     EV_C_REQUEST_MINOR_REALLOC_CUSTOM_TABLE
 } ev_gc_counter;
 
-#define CAML_EVENTLOG(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) (f)
+#define CAML_EVENTLOG(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) f
 
 /* General note about the public API for the eventlog framework
    caml_ev_* functions are no-op when called with the eventlog framework
