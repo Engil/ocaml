@@ -145,7 +145,7 @@ void caml_set_minor_heap_size (asize_t bsz)
   CAMLassert (bsz <= Bsize_wsize(Minor_heap_max));
   CAMLassert (bsz % sizeof (value) == 0);
   if (Caml_state->young_ptr != Caml_state->young_alloc_end){
-    caml_ev_counter (EV_C_FORCE_MINOR_SET_MINOR_HEAP_SIZE, 1);
+    CAML_EV_COUNTER (EV_C_FORCE_MINOR_SET_MINOR_HEAP_SIZE, 1);
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
@@ -356,18 +356,18 @@ void caml_empty_minor_heap (void)
     prev_alloc_words = caml_allocated_words;
     Caml_state->in_minor_collection = 1;
     caml_gc_message (0x02, "<");
-    caml_ev_begin(EV_MINOR_LOCAL_ROOTS);
+    CAML_EV_BEGIN(EV_MINOR_LOCAL_ROOTS);
     caml_oldify_local_roots();
-    caml_ev_end(EV_MINOR_LOCAL_ROOTS);
-    caml_ev_begin(EV_MINOR_REF_TABLES);
+    CAML_EV_END(EV_MINOR_LOCAL_ROOTS);
+    CAML_EV_BEGIN(EV_MINOR_REF_TABLES);
     for (r = Caml_state->ref_table->base;
          r < Caml_state->ref_table->ptr; r++) {
       caml_oldify_one (**r, *r);
     }
-    caml_ev_end(EV_MINOR_REF_TABLES);
-    caml_ev_begin(EV_MINOR_COPY);
+    CAML_EV_END(EV_MINOR_REF_TABLES);
+    CAML_EV_BEGIN(EV_MINOR_COPY);
     caml_oldify_mopup ();
-    caml_ev_end(EV_MINOR_COPY);
+    CAML_EV_END(EV_MINOR_COPY);
     /* Update the ephemerons */
     for (re = Caml_state->ephe_ref_table->base;
          re < Caml_state->ephe_ref_table->ptr; re++){
@@ -386,7 +386,7 @@ void caml_empty_minor_heap (void)
       }
     }
     /* Update the OCaml finalise_last values */
-    caml_ev_begin(EV_MINOR_UPDATE_WEAK);
+    CAML_EV_BEGIN(EV_MINOR_UPDATE_WEAK);
     caml_final_update_minor_roots();
     /* Run custom block finalisation of dead minor values */
     for (elt = Caml_state->custom_table->base;
@@ -401,8 +401,8 @@ void caml_empty_minor_heap (void)
         if (final_fun != NULL) final_fun(v);
       }
     }
-    caml_ev_end(EV_MINOR_UPDATE_WEAK);
-    caml_ev_begin(EV_MINOR_FINALIZED);
+    CAML_EV_END(EV_MINOR_UPDATE_WEAK);
+    CAML_EV_BEGIN(EV_MINOR_FINALIZED);
     Caml_state->stat_minor_words +=
       Caml_state->young_alloc_end - Caml_state->young_ptr;
     caml_gc_clock +=
@@ -416,9 +416,9 @@ void caml_empty_minor_heap (void)
     caml_gc_message (0x02, ">");
     Caml_state->in_minor_collection = 0;
     caml_final_empty_young ();
-    caml_ev_end(EV_MINOR_FINALIZED);
+    CAML_EV_END(EV_MINOR_FINALIZED);
     Caml_state->stat_promoted_words += caml_allocated_words - prev_alloc_words;
-    caml_ev_counter (EV_C_MINOR_PROMOTED,
+    CAML_EV_COUNTER (EV_C_MINOR_PROMOTED,
                      caml_allocated_words - prev_alloc_words);
     ++ Caml_state->stat_minor_collections;
     caml_memprof_renew_minor_sample();
@@ -449,8 +449,8 @@ CAMLexport void caml_gc_dispatch (void)
 {
   value *trigger = Caml_state->young_trigger; /* save old value of trigger */
 
-  CAML_EVENTLOG({
-    caml_ev_counter(EV_C_ALLOC_JUMP, caml_instr_alloc_jump);
+  CAML_EVENTLOG_DO({
+    CAML_EV_COUNTER(EV_C_ALLOC_JUMP, caml_instr_alloc_jump);
     caml_instr_alloc_jump =  0;
   });
 
@@ -458,18 +458,18 @@ CAMLexport void caml_gc_dispatch (void)
       || Caml_state->requested_minor_gc) {
     /* The minor heap is full, we must do a minor collection. */
     /* reset the pointers first because the end hooks might allocate */
-    caml_ev_begin(EV_MINOR);
+    CAML_EV_BEGIN(EV_MINOR);
     Caml_state->requested_minor_gc = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_mid;
     caml_update_young_limit();
     caml_empty_minor_heap ();
     /* The minor heap is empty, we can start a major collection. */
-    caml_ev_end(EV_MINOR);
+    CAML_EV_END(EV_MINOR);
     if (caml_gc_phase == Phase_idle)
     {
-      caml_ev_begin(EV_MAJOR);
+      CAML_EV_BEGIN(EV_MAJOR);
       caml_major_collection_slice (-1);
-      caml_ev_end(EV_MAJOR);
+      CAML_EV_END(EV_MAJOR);
     }
   }
   if (trigger != Caml_state->young_alloc_start
@@ -478,9 +478,9 @@ CAMLexport void caml_gc_dispatch (void)
     Caml_state->requested_major_slice = 0;
     Caml_state->young_trigger = Caml_state->young_alloc_start;
     caml_update_young_limit();
-    caml_ev_begin(EV_MAJOR);
+    CAML_EV_BEGIN(EV_MAJOR);
     caml_major_collection_slice (-1);
-    caml_ev_end(EV_MAJOR);
+    CAML_EV_END(EV_MAJOR);
   }
 }
 
@@ -516,7 +516,7 @@ void caml_alloc_small_dispatch (tag_t tag, intnat wosize, int flags)
 
     /* If not, then empty the minor heap, and check again for async
        callbacks. */
-    caml_ev_counter (EV_C_FORCE_MINOR_ALLOC_SMALL, 1);
+    CAML_EV_COUNTER (EV_C_FORCE_MINOR_ALLOC_SMALL, 1);
     caml_gc_dispatch ();
   }
 
@@ -571,7 +571,7 @@ static void realloc_generic_table
     alloc_generic_table (tbl, Caml_state->minor_heap_wsz / 8, 256,
                          element_size);
   }else if (tbl->limit == tbl->threshold){
-    caml_ev_counter (ev_counter_name, 1);
+    CAML_EV_COUNTER (ev_counter_name, 1);
     caml_gc_message (0x08, msg_threshold, 0);
     tbl->limit = tbl->end;
     caml_request_minor_gc ();

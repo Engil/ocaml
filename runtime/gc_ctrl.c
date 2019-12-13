@@ -416,7 +416,7 @@ CAMLprim value caml_gc_set(value v)
   asize_t newminwsz;
   uintnat newpolicy;
   uintnat new_custom_maj, new_custom_min, new_custom_sz;
-  caml_ev_begin(EV_EXPLICIT_GC_SET);
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_SET);
 
   caml_verb_gc = Long_val (Field (v, 3));
 
@@ -508,7 +508,7 @@ CAMLprim value caml_gc_set(value v)
                      ARCH_SIZET_PRINTF_FORMAT "uk words\n", newminwsz / 1024);
     caml_set_minor_heap_size (Bsize_wsize (newminwsz));
   }
-  caml_ev_end(EV_EXPLICIT_GC_SET);
+  CAML_EV_END(EV_EXPLICIT_GC_SET);
 
   /* The compaction may have triggered some finalizers that we need to call. */
   caml_process_pending_actions();
@@ -520,12 +520,12 @@ CAMLprim value caml_gc_minor(value v)
 {
   value exn;
 
-  caml_ev_begin(EV_EXPLICIT_GC_MINOR);
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_MINOR);
   CAMLassert (v == Val_unit);
   caml_request_minor_gc ();
   // call the gc and call finalisers
   exn = caml_process_pending_actions_exn();
-  caml_ev_end(EV_EXPLICIT_GC_MINOR);
+  CAML_EV_END(EV_EXPLICIT_GC_MINOR);
   caml_raise_if_exception(exn);
   return Val_unit;
 }
@@ -549,7 +549,7 @@ CAMLprim value caml_gc_major(value v)
 {
   value exn;
 
-  caml_ev_begin(EV_EXPLICIT_GC_MAJOR);
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_MAJOR);
   CAMLassert (v == Val_unit);
   caml_gc_message (0x1, "Major GC cycle requested\n");
   caml_empty_minor_heap ();
@@ -557,7 +557,7 @@ CAMLprim value caml_gc_major(value v)
   test_and_compact ();
   // call finalisers
   exn = caml_process_pending_actions_exn();
-  caml_ev_end(EV_EXPLICIT_GC_MAJOR);
+  CAML_EV_END(EV_EXPLICIT_GC_MAJOR);
   caml_raise_if_exception(exn);
   return Val_unit;
 }
@@ -566,7 +566,7 @@ CAMLprim value caml_gc_full_major(value v)
 {
   value exn;
 
-  caml_ev_begin(EV_EXPLICIT_GC_FULL_MAJOR);
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_FULL_MAJOR);
   CAMLassert (v == Val_unit);
   caml_gc_message (0x1, "Full major GC cycle requested\n");
   caml_empty_minor_heap ();
@@ -581,17 +581,17 @@ CAMLprim value caml_gc_full_major(value v)
   exn = caml_process_pending_actions_exn();
 
 cleanup:
-  caml_ev_end(EV_EXPLICIT_GC_FULL_MAJOR);
+  CAML_EV_END(EV_EXPLICIT_GC_FULL_MAJOR);
   caml_raise_if_exception(exn);
   return Val_unit;
 }
 
 CAMLprim value caml_gc_major_slice (value v)
 {
-  caml_ev_begin(EV_EXPLICIT_GC_MAJOR_SLICE);
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_MAJOR_SLICE);
   CAMLassert (Is_long (v));
   caml_major_collection_slice (Long_val (v));
-  caml_ev_end(EV_EXPLICIT_GC_MAJOR_SLICE);
+  CAML_EV_END(EV_EXPLICIT_GC_MAJOR_SLICE);
   return Val_long (0);
 }
 
@@ -599,7 +599,7 @@ CAMLprim value caml_gc_compaction(value v)
 {
   value exn;
 
-  caml_ev_begin(EV_EXPLICIT_GC_COMPACT);
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_COMPACT);
   CAMLassert (v == Val_unit);
   caml_gc_message (0x10, "Heap compaction requested\n");
   caml_empty_minor_heap ();
@@ -614,7 +614,7 @@ CAMLprim value caml_gc_compaction(value v)
   exn = caml_process_pending_actions_exn();
 
  cleanup:
-  caml_ev_end(EV_EXPLICIT_GC_COMPACT);
+  CAML_EV_END(EV_EXPLICIT_GC_COMPACT);
   caml_raise_if_exception(exn);
   return Val_unit;
 }
@@ -672,7 +672,7 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
   caml_percent_max = norm_pmax (percent_m);
   caml_init_major_heap (major_heap_size);
   caml_major_window = norm_window (window);
-  caml_eventlog_init();
+  CAML_EVENTLOG_INIT();
   caml_custom_major_ratio = norm_custom_maj (custom_maj);
   caml_custom_minor_ratio = norm_custom_min (custom_min);
   caml_custom_minor_max_bsz = custom_bsz;

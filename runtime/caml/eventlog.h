@@ -62,7 +62,18 @@ typedef enum {
     EV_C_REQUEST_MINOR_REALLOC_CUSTOM_TABLE
 } ev_gc_counter;
 
-#define CAML_EVENTLOG(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) f
+#ifdef CAML_EVENTLOG
+
+#define CAML_EVENTLOG_DO(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) f
+
+#define CAML_EVENTLOG_INIT() caml_eventlog_init()
+#define CAML_EVENTLOG_DISABLE() caml_eventlog_disable()
+#define CAML_EV_BEGIN(p) caml_ev_begin(p)
+#define CAML_EV_END(p) caml_ev_end(p)
+#define CAML_EV_COUNTER(c, v) caml_ev_counter(c, v)
+#define CAML_EV_ALLOC(s) caml_ev_alloc(s)
+#define CAML_EV_ALLOC_FLUSH() caml_ev_alloc_flush()
+#define CAML_EV_FLUSH() caml_ev_flush()
 
 /* General note about the public API for the eventlog framework
    caml_ev_* functions are no-op when called with the eventlog framework
@@ -75,12 +86,26 @@ typedef enum {
 
 void caml_eventlog_init(void);
 void caml_eventlog_disable(void);
-
 void caml_ev_begin(ev_gc_phase phase);
 void caml_ev_end(ev_gc_phase phase);
 void caml_ev_counter(ev_gc_counter counter, uint64_t val);
 void caml_ev_alloc(uint64_t size);
 void caml_ev_alloc_flush(void);
 void caml_ev_flush(void);
+
+#else
+
+#define CAML_EVENTLOG_DO(f) /**/
+
+#define CAML_EVENTLOG_INIT() /**/
+#define CAML_EVENTLOG_DISABLE() /**/
+#define CAML_EV_BEGIN(p) /**/
+#define CAML_EV_END(p) /**/
+#define CAML_EV_COUNTER(c, v) /**/
+#define CAML_EV_ALLOC(S) /**/
+#define CAML_EV_ALLOC_FLUSH() /**/
+#define CAML_EV_FLUSH() /**/
+
+#endif
 
 #endif

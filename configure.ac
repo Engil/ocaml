@@ -122,7 +122,7 @@ AC_SUBST([natdynlink])
 AC_SUBST([natdynlinkopts])
 AC_SUBST([cmxs])
 AC_SUBST([debug_runtime])
-AC_SUBST([instrumented_runtime])
+AC_SUBST([eventlog_runtime])
 AC_SUBST([otherlibraries])
 AC_SUBST([cc_has_debug_prefix_map])
 AC_SUBST([as_has_debug_prefix_map])
@@ -1077,23 +1077,23 @@ AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 # warnings. For the moment we simply disable it on MinGW
 # but this would need to be further investigated
 AS_CASE([$host],
-  [*-*-mingw32], [instrumented_runtime=false],
-  [AS_IF([test "x$enable_instrumented_runtime" = "xno" ],
-    [instrumented_runtime=false; instrumented_runtime_libs=""],
+  [*-*-mingw32], [eventlog_runtime=false],
+  [AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
+    [eventlog_runtime=false; eventlog_runtime_libs=""],
     [
       AC_SEARCH_LIBS([clock_gettime], [rt],
         [has_clock_gettime=true],
         [has_clock_gettime=false])
-      AS_CASE([$enable_instrumented_runtime,$has_clock_gettime],
+      AS_CASE([$enable_eventlog_runtime,$has_clock_gettime],
         [*,true],
-          [instrumented_runtime=true
+          [eventlog_runtime=true
           AS_IF([test "x$ac_cv_search_clock_gettime" = "xnone required"],
-            [instrumented_runtime_libs=""],
-            [instrumented_runtime_libs=$ac_cv_search_clock_gettime])],
+            [eventlog_runtime_libs=""],
+            [eventlog_runtime_libs=$ac_cv_search_clock_gettime])],
         [auto,*],
-          [instrumented_runtime=false],
+          [eventlog_runtime=false],
         [yes,*],
-          [AC_MSG_ERROR([the instrumented runtime can not be built])])])])
+          [AC_MSG_ERROR([the eventlog runtime can not be built])])])])
 
 ## Sockets
 
@@ -1733,7 +1733,7 @@ AS_CASE([$host],
   [*-pc-windows],
     [bytecclibs="advapi32.lib ws2_32.lib version.lib"
     nativecclibs="advapi32.lib ws2_32.lib version.lib"],
-  [bytecclibs="$cclibs $DLLIBS $pthread_link $instrumented_runtime_libs"
+  [bytecclibs="$cclibs $DLLIBS $pthread_link $eventlog_runtime_libs"
   nativecclibs="$cclibs $DLLIBS"])
 
 AS_IF([test x"$libdir" = x'${exec_prefix}/lib'],

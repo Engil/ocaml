@@ -352,7 +352,7 @@ intnat caml_darken_all_roots_slice (intnat work)
   static int do_resume = 0;
   static mlsize_t roots_count = 0;
   intnat remaining_work = work;
-  caml_ev_begin(EV_MAJOR_MARK_GLOBAL_ROOTS_SLICE);
+  CAML_EV_BEGIN(EV_MAJOR_MARK_GLOBAL_ROOTS_SLICE);
 
   /* If the loop was started in a previous call, resume it. */
   if (do_resume) goto resume;
@@ -382,7 +382,7 @@ intnat caml_darken_all_roots_slice (intnat work)
 
  suspend:
   /* Do this in both cases. */
-  caml_ev_end(EV_MAJOR_MARK_GLOBAL_ROOTS_SLICE);
+  CAML_EV_END(EV_MAJOR_MARK_GLOBAL_ROOTS_SLICE);
   return remaining_work;
 }
 
@@ -392,7 +392,7 @@ void caml_do_roots (scanning_action f, int do_globals)
   value * glob;
   link *lnk;
 
-  caml_ev_begin(EV_MAJOR_ROOTS_DYNAMIC_GLOBAL);
+  CAML_EV_BEGIN(EV_MAJOR_ROOTS_DYNAMIC_GLOBAL);
   if (do_globals){
     /* The global roots */
     for (i = 0; caml_globals[i] != 0; i++) {
@@ -410,29 +410,29 @@ void caml_do_roots (scanning_action f, int do_globals)
       }
     }
   }
-  caml_ev_end(EV_MAJOR_ROOTS_DYNAMIC_GLOBAL);
+  CAML_EV_END(EV_MAJOR_ROOTS_DYNAMIC_GLOBAL);
   /* The stack and local roots */
-  caml_ev_begin(EV_MAJOR_ROOTS_LOCAL);
+  CAML_EV_BEGIN(EV_MAJOR_ROOTS_LOCAL);
   caml_do_local_roots(f, Caml_state->bottom_of_stack,
                       Caml_state->last_return_address, Caml_state->gc_regs,
                       Caml_state->local_roots);
-  caml_ev_end(EV_MAJOR_ROOTS_LOCAL);
+  CAML_EV_END(EV_MAJOR_ROOTS_LOCAL);
   /* Global C roots */
-  caml_ev_begin(EV_MAJOR_ROOTS_C);
+  CAML_EV_BEGIN(EV_MAJOR_ROOTS_C);
   caml_scan_global_roots(f);
-  caml_ev_end(EV_MAJOR_ROOTS_C);
+  CAML_EV_END(EV_MAJOR_ROOTS_C);
   /* Finalised values */
-  caml_ev_begin(EV_MAJOR_ROOTS_FINALISED);
+  CAML_EV_BEGIN(EV_MAJOR_ROOTS_FINALISED);
   caml_final_do_roots (f);
-  caml_ev_end(EV_MAJOR_ROOTS_FINALISED);
+  CAML_EV_END(EV_MAJOR_ROOTS_FINALISED);
   /* Memprof */
-  caml_ev_begin(EV_MAJOR_ROOTS_MEMPROF);
+  CAML_EV_BEGIN(EV_MAJOR_ROOTS_MEMPROF);
   caml_memprof_scan_roots (f);
-  caml_ev_end(EV_MAJOR_ROOTS_MEMPROF);
+  CAML_EV_END(EV_MAJOR_ROOTS_MEMPROF);
   /* Hook */
-  caml_ev_begin(EV_MAJOR_ROOTS_HOOK);
+  CAML_EV_BEGIN(EV_MAJOR_ROOTS_HOOK);
   if (caml_scan_roots_hook != NULL) (*caml_scan_roots_hook)(f);
-  caml_ev_end(EV_MAJOR_ROOTS_HOOK);
+  CAML_EV_END(EV_MAJOR_ROOTS_HOOK);
 }
 
 void caml_do_local_roots(scanning_action f, char * bottom_of_stack,

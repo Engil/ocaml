@@ -15,6 +15,8 @@
 #include <process.h>
 #endif
 
+#ifdef CAML_EVENTLOG
+
 #define CTF_MAGIC 0xc1fc1fc1
 #define CAML_TRACE_VERSION 0x1
 
@@ -311,3 +313,17 @@ CAMLprim value caml_eventlog_pause(value v)
   };
   return Val_unit;
 }
+
+#else
+
+CAMLprim value caml_eventlog_resume(value v)
+{
+  return Val_unit;
+}
+
+CAMLprim value caml_eventlog_pause(value v)
+{
+  return Val_unit;
+}
+
+#endif
