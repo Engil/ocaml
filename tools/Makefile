@@ -312,6 +312,14 @@ clean::
 clean::
 	rm -f "objinfo_helper$(EXE)" "objinfo_helper$(EXE).manifest"
 
+# Eventlog metadata file
+
+EVENTLOG_METADATA=eventlog_metadata
+
+install::
+	$(INSTALL_DATA) \
+	  $(EVENTLOG_METADATA) \
+	  "$(INSTALL_LIBDIR)"
 
 # Copy a bytecode executable, stripping debug info
 
