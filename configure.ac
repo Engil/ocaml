@@ -215,6 +215,12 @@ AC_ARG_ENABLE([debugger],
 AC_ARG_VAR([DLLIBS],
   [which libraries to use (in addition to -ldl) to load dynamic libs])
 
+AC_ARG_ENABLE([eventlog-runtime],
+  [AS_HELP_STRING([--enable-eventlog-runtime],
+    [build the eventlog runtime @<:@default=auto@:>@])],
+  [],
+  [enable_eventlog_runtime=auto])
+
 AC_ARG_ENABLE([vmthreads], [],
   [AC_MSG_ERROR([The vmthreads library is no longer available. \
 It was deleted in OCaml 4.09.])],
