@@ -136,6 +136,7 @@ AC_SUBST([bfd_cppflags])
 AC_SUBST([bfd_ldflags])
 AC_SUBST([bfd_ldlibs])
 AC_SUBST([ASPP])
+AC_SUBST([endianness])
 AC_SUBST([AS])
 AC_SUBST([asm_cfi_supported])
 AC_SUBST([sharedlib_cflags])
@@ -742,8 +743,11 @@ AC_DEFINE_UNQUOTED([SIZEOF_LONGLONG], [$ac_cv_sizeof_long_long])
 AC_MSG_NOTICE([Target is a $bits bits architecture])
 
 AC_C_BIGENDIAN(
-  [AC_DEFINE([ARCH_BIG_ENDIAN], [1])],
-  [],
+  [
+    AC_DEFINE([ARCH_BIG_ENDIAN], [1]),
+    [endianness="be"]
+  ],
+  [endianness="le"],
   [AC_MSG_ERROR([could not determine endianness.])],
   [AC_MSG_ERROR([unable to handle universal endianness])]
 )

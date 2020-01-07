@@ -314,12 +314,18 @@ clean::
 
 # Eventlog metadata file
 
+eventlog_metadata: $(EVENTLOG_METADATA)
+	cat eventlog_metadata.in | sed "s/@endianness/$(EVENTLOG_ENDIANNESS)/g" > eventlog_metadata
+
 EVENTLOG_METADATA=eventlog_metadata
 
-install::
+install:: $(EVENTLOG_METADATA)
 	$(INSTALL_DATA) \
-	  $(EVENTLOG_METADATA) \
+	  eventlog_metadata \
 	  "$(INSTALL_LIBDIR)"
+
+clean::
+	rm -f -- eventlog_metadata
 
 # Copy a bytecode executable, stripping debug info
 

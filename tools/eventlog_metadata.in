@@ -31,7 +31,7 @@ or remove metrics in the future.
 trace {
     major = 1;
     minor = 8;
-    byte_order = le; /* platform specific: is the stream BE or LE? See PR comments*/
+    byte_order = @endianness; /* platform specific: is the stream BE or LE? See PR comments*/
     packet.header := struct {
         uint32_t magic; /* required: must contain CTF magic number */
         uint16_t ocaml_trace_version; /* our own trace format versionning */
