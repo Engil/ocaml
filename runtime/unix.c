@@ -464,6 +464,8 @@ int64_t caml_time_counter(void)
 
 #else
 
+#warning "no proper monotonic clock found, caml_time_counter will be inaccurate"
+
 int64 caml_time_counter(void)
 {
   return 0;
