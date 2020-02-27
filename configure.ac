@@ -1080,18 +1080,38 @@ CPP_FLAGS="$saved_CPPFLAGS"
 
 AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 
-## clock_gettime, for the instrumented runtime
+## Eventlog runtime clock function
+## On Windows MSVC, QueryPerformanceCounter and QueryPerformanceFrequency
+## are always available
+## On Unix platforms, we check if clock_gettime is available and
+## if the -lrt link flag is required
+## On MacOS clock_gettime's CLOCK_MONOTONIC flag is not actually monotonic
+## mach_timebase_info and mach_absolute_time are used instead.
+## On platform with no clock_gettime and other specific variants, we issue
+## a warning and a dummy counter implementation is used, returning 0.
 
-## Note: on MinGW, configure finds a clock_gettime and thus the build
-# system tries to build the instrumented runtime, which causes
-# warnings. For the moment we simply disable it on MinGW
-# but this would need to be further investigated
 AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
   [eventlog_runtime=false; eventlog_runtime_libs=""],
-    [
-    AC_SEARCH_LIBS([clock_gettime], [rt],
-        [has_clock_gettime=true],
-        [has_clock_gettime=false])
+  [
+    AS_CASE([$host],
+    [*-*-windows], [
+      AS_CASE([$enable_eventlog_runtime],
+        [yes], [eventlog_runtime=true],
+        [no], [eventlog_runtime=false])],
+    [*-apple-darwin*], [
+      AC_CHECK_FUNCS([mach_timebase_info mach_absolute_time],
+        [has_mach_absolute_time=true])
+      AS_CASE([$enable_eventlog_runtime,$has_mach_absolute_time],
+        [*,true],
+          [eventlog_runtime=true],
+        [yes,false],
+          [AC_MSG_WARN([mach_absolute_time missing, eventlog will be inaccurate])
+          eventlog_runtime=true]
+        [auto,*], [eventlog_runtime=false]
+    )],
+    [AC_SEARCH_LIBS([clock_gettime], [rt],
+      [has_clock_gettime=true],
+      [has_clock_gettime=false])
       AS_CASE([$enable_eventlog_runtime,$has_clock_gettime],
         [*,true],
           [eventlog_runtime=true
@@ -1101,7 +1121,10 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
         [auto,*],
           [eventlog_runtime=false],
         [yes,*],
-          [AC_MSG_ERROR([the eventlog runtime can not be built])])])
+          [
+           AC_MSG_WARN([clock_gettime missing, eventlog will be inaccurate])
+           eventlog_runtime=true
+          ])])])
 
 ## Sockets
 

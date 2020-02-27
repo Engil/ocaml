@@ -68,7 +68,7 @@ BYTECODE_STATIC_LIBRARIES += libcamlrund.$(A)
 NATIVE_STATIC_LIBRARIES += libasmrund.$(A)
 endif
 
-ifeq "$(RUNTIMEI)" "true"
+ifeq "$(RUNTIMEE)" "true"
 PROGRAMS += ocamlrune$(EXE)
 BYTECODE_STATIC_LIBRARIES += libcamlrune.$(A)
 NATIVE_STATIC_LIBRARIES += libasmrune.$(A)
