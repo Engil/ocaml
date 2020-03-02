@@ -1086,12 +1086,10 @@ AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 # system tries to build the instrumented runtime, which causes
 # warnings. For the moment we simply disable it on MinGW
 # but this would need to be further investigated
-AS_CASE([$host],
-  [*-*-mingw32], [eventlog_runtime=false],
-  [AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
-    [eventlog_runtime=false; eventlog_runtime_libs=""],
+AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
+  [eventlog_runtime=false; eventlog_runtime_libs=""],
     [
-      AC_SEARCH_LIBS([clock_gettime], [rt],
+    AC_SEARCH_LIBS([clock_gettime], [rt],
         [has_clock_gettime=true],
         [has_clock_gettime=false])
       AS_CASE([$enable_eventlog_runtime,$has_clock_gettime],
@@ -1103,7 +1101,7 @@ AS_CASE([$host],
         [auto,*],
           [eventlog_runtime=false],
         [yes,*],
-          [AC_MSG_ERROR([the eventlog runtime can not be built])])])])
+          [AC_MSG_ERROR([the eventlog runtime can not be built])])])
 
 ## Sockets
 
