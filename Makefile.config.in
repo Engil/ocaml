@@ -214,7 +214,7 @@ MKMAINDLL=@mkmaindll@
 
 MKEXEDEBUGFLAG=@mkexedebugflag@
 RUNTIMED=@debug_runtime@
-RUNTIMEI=@instrumented_runtime@
+RUNTIMEE=@eventlog_runtime@
 WITH_DEBUGGER=@with_debugger@
 WITH_CAMLTEX=@with_camltex@
 WITH_OCAMLDOC=@ocamldoc@

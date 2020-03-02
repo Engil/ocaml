@@ -1082,10 +1082,6 @@ AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 
 ## clock_gettime, for the instrumented runtime
 
-## Note: on MinGW, configure finds a clock_gettime and thus the build
-# system tries to build the instrumented runtime, which causes
-# warnings. For the moment we simply disable it on MinGW
-# but this would need to be further investigated
 AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
   [eventlog_runtime=false; eventlog_runtime_libs=""],
     [
