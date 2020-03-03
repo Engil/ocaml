@@ -1087,7 +1087,7 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
   [
     AS_CASE([$host],
     [*-*-windows], [
-      AC_SEARCH_LIBS([QueryPerformanceCounter], [],
+      AC_CHECK_FUNC([QueryPerformanceCounter],
       [has_performance_counter=true],
       [has_performance_counter=false])
       AS_CASE([$enable_eventlog_runtime,$has_performance_counter],
