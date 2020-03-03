@@ -125,7 +125,7 @@ TARGETHEADERPROGRAM = target_$(HEADERPROGRAM)
 CAMLHEADERS =\
   camlheader target_camlheader camlheader_ur \
   camlheaderd target_camlheaderd \
-  camlheaderi target_camlheaderi
+  camlheadere target_camlheadere
 
 # The % in pattern rules must always match something, hence the slightly strange
 # patterns and $(subst ...) since `camlheader%:` wouldn't match `camlheader`
