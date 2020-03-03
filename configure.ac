@@ -1084,8 +1084,20 @@ AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 
 AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
   [eventlog_runtime=false; eventlog_runtime_libs=""],
-    [
-    AC_SEARCH_LIBS([clock_gettime], [rt],
+  [
+    AS_CASE([$host],
+    [*-*-windows], [
+      AC_SEARCH_LIBS([QueryPerformanceCounter], [],
+      [has_performance_counter=true],
+      [has_performance_counter=false])
+      AS_CASE([$enable_eventlog_runtime,$has_performance_counter],
+        [yes,true],
+          [eventlog_runtime=true],
+        [auto,*],
+          [eventlog_runtime=false],
+        [yes,*],
+          [AC_MSG_ERROR([performance counter missing, eventlog runtime cannot be built])])],
+    [AC_SEARCH_LIBS([clock_gettime], [rt],
         [has_clock_gettime=true],
         [has_clock_gettime=false])
       AS_CASE([$enable_eventlog_runtime,$has_clock_gettime],
@@ -1097,7 +1109,7 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
         [auto,*],
           [eventlog_runtime=false],
         [yes,*],
-          [AC_MSG_ERROR([the eventlog runtime can not be built])])])
+          [AC_MSG_ERROR([the eventlog runtime can not be built])])])])
 
 ## Sockets
 
