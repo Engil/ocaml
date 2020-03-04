@@ -162,7 +162,7 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 
 }
 
-static void teardown_eventlog()
+static void teardown_eventlog(void)
 {
   if (evbuf) {
     flush_events(Caml_state->eventlog_out, evbuf);
