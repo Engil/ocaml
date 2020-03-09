@@ -315,7 +315,7 @@ clean::
 # Eventlog metadata file
 
 eventlog_metadata: $(EVENTLOG_METADATA)
-	cat eventlog_metadata.in | sed "s/@endianness/$(EVENTLOG_ENDIANNESS)/g" > eventlog_metadata
+	sed "s/@endianness/$(EVENTLOG_ENDIANNESS)/g" eventlog_metadata.in > eventlog_metadata
 
 EVENTLOG_METADATA=eventlog_metadata
 
