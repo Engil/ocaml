@@ -1105,7 +1105,8 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
         [*,true],
           [eventlog_runtime=true],
         [yes,false],
-          [AC_MSG_WARN([mach_absolute_time missing, eventlog will be inaccurate])
+          [AC_MSG_WARN([mach_absolute_time missing,
+                          eventlog will be inaccurate])
           eventlog_runtime=true]
         [auto,*], [eventlog_runtime=false]
     )],

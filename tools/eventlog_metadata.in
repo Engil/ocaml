@@ -21,7 +21,8 @@ typealias integer {
 Main trace description,
 major and minor refers to the CTF version being used.
 
-The packet header must contain at the very least a stream id and the CTF magic number.
+The packet header must contain at the very least
+a stream id and the CTF magic number.
 We only use one stream for now, and CTF magic number is 0xc1fc1fc1.
 
 We add an extra field ocaml_trace_version to enable simpler transition if we add
@@ -31,7 +32,7 @@ or remove metrics in the future.
 trace {
     major = 1;
     minor = 8;
-    byte_order = @endianness; /* platform specific: is the stream BE or LE? See PR comments*/
+    byte_order = @endianness;
     packet.header := struct {
         uint32_t magic; /* required: must contain CTF magic number */
         uint16_t ocaml_trace_version; /* our own trace format versionning */
@@ -58,7 +59,8 @@ stream {
 /*
 
 These enumerations are mostly following the instrumented runtime datapoints.
-gc_phase aims to track the entry and exit time of each following events during collection.
+gc_phase aims to track the entry and exit time of each following events
+during collection.
 
 */
 enum gc_phase : uint16_t {

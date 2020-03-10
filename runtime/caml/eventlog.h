@@ -80,7 +80,8 @@ typedef enum {
 
 #ifdef CAML_EVENTLOG
 
-#define CAML_EVENTLOG_DO(f) if (Caml_state->eventlog_enabled && !Caml_state->eventlog_paused) f
+#define CAML_EVENTLOG_DO(f) if (Caml_state->eventlog_enabled &&\
+                                 !Caml_state->eventlog_paused) f
 
 #define CAML_EVENTLOG_INIT() caml_eventlog_init()
 #define CAML_EVENTLOG_DISABLE() caml_eventlog_disable()
