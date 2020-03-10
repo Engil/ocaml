@@ -1091,7 +1091,7 @@ AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 ## a warning and a dummy counter implementation is used, returning 0.
 
 AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
-  [eventlog_runtime=false; eventlog_runtime_libs=""],
+  [eventlog_runtime=false; eventlog_runtime_ldlibs=""],
   [
     AS_CASE([$host],
     [*-*-windows], [
@@ -1116,8 +1116,8 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
         [*,true],
           [eventlog_runtime=true
           AS_IF([test "x$ac_cv_search_clock_gettime" = "xnone required"],
-            [eventlog_runtime_libs=""],
-            [eventlog_runtime_libs=$ac_cv_search_clock_gettime])],
+            [eventlog_runtime_ldlibs=""],
+            [eventlog_runtime_ldlibs=$ac_cv_search_clock_gettime])],
         [auto,*],
           [eventlog_runtime=false],
         [yes,*],
@@ -1764,7 +1764,7 @@ AS_CASE([$host],
   [*-pc-windows],
     [bytecclibs="advapi32.lib ws2_32.lib version.lib"
     nativecclibs="advapi32.lib ws2_32.lib version.lib"],
-  [bytecclibs="$cclibs $DLLIBS $pthread_link $eventlog_runtime_libs"
+  [bytecclibs="$cclibs $DLLIBS $pthread_link $eventlog_runtime_ldlibs"
   nativecclibs="$cclibs $DLLIBS"])
 
 AS_IF([test x"$libdir" = x'${exec_prefix}/lib'],
