@@ -101,7 +101,8 @@ static void setup_eventlog_file()
     }
 
   } else {
-    tmp = caml_alloc_sprintf("caml-eventlog-%d", Caml_state->eventlog_startup_pid);
+    tmp = caml_alloc_sprintf("caml-eventlog-%d",
+                             Caml_state->eventlog_startup_pid);
     filename = caml_stat_strdup_to_os(String_val(tmp));
   }
 
@@ -111,7 +112,8 @@ static void setup_eventlog_file()
   }
 
   if (Caml_state->eventlog_out) {
-    int ret =  fwrite(&header, sizeof(struct ctf_stream_header), 1, Caml_state->eventlog_out);
+    int ret =  fwrite(&header, sizeof(struct ctf_stream_header),
+                      1, Caml_state->eventlog_out);
     if (ret != 1)
       caml_eventlog_disable();
     fflush(Caml_state->eventlog_out);
@@ -133,7 +135,8 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 
   struct ctf_event_header ev_flush;
   ev_flush.id = EV_FLUSH;
-  ev_flush.timestamp = caml_time_counter() - Caml_state->eventlog_startup_timestamp;
+  ev_flush.timestamp = caml_time_counter() -
+                        Caml_state->eventlog_startup_timestamp;
   ev_flush.pid = Caml_state->eventlog_startup_pid;
 
   for (i = 0; i < n; i++) {
@@ -164,7 +167,8 @@ static void flush_events(FILE* out, struct event_buffer* eb)
   }
 
   uint64_t flush_duration =
-    (caml_time_counter() - Caml_state->eventlog_startup_timestamp) - ev_flush.timestamp;
+    (caml_time_counter() - Caml_state->eventlog_startup_timestamp) -
+     ev_flush.timestamp;
 
   FWRITE_EV(&ev_flush, sizeof(struct ctf_event_header));
   FWRITE_EV(&flush_duration, sizeof(uint64_t));
@@ -238,7 +242,8 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
   ev->counter_kind = counter_kind;
   ev->alloc_bucket = bucket;
   ev->phase = phase;
-  ev->header.timestamp = caml_time_counter() - Caml_state->eventlog_startup_timestamp;
+  ev->header.timestamp = caml_time_counter() -
+                           Caml_state->eventlog_startup_timestamp;
   evbuf->ev_generated = i + 1;
 }
 
@@ -259,7 +264,7 @@ void caml_ev_counter(ev_gc_counter counter, uint64_t val)
 
 static uint64_t alloc_buckets [20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-/* This function records allocations in caml_alloc_shr_aux in given bucket sizes.
+/* This function records allocations in caml_alloc_shr_aux in given bucket sizes
    These buckets are meant to be flushed explicitly by the caller through the
    caml_ev_alloc_flush function. Until then the buckets are just updated until
    flushed.
