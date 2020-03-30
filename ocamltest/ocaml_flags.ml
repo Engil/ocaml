@@ -29,7 +29,7 @@ let c_includes ocamlsrcdir =
 let runtime_variant_flags () = match Ocaml_files.runtime_variant() with
   | Ocaml_files.Normal -> ""
   | Ocaml_files.Debug -> " -runtime-variant d"
-  | Ocaml_files.Instrumented -> " -runtime-variant i"
+  | Ocaml_files.Eventlog -> " -runtime-variant e"
 
 let runtime_flags ocamlsrcdir env backend c_files =
   let runtime_library_flags = "-I " ^
