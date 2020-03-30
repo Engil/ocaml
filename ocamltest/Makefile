@@ -226,6 +226,7 @@ ocamltest.opt$(EXE): $(native_modules)
 ocamltest_config.ml: ocamltest_config.ml.in Makefile ../Makefile.config
 	sed \
 	  -e 's|@@AFL_INSTRUMENT@@|$(AFL_INSTRUMENT)|' \
+	  -e 's|@@RUNTIMEE@@|$(RUNTIMEE)|' \
 	  -e 's|@@ARCH@@|$(ARCH)|' \
 	  -e 's|@@SHARED_LIBRARIES@@|$(SUPPORTS_SHARED_LIBRARIES)|' \
 	  -e 's|@@UNIX@@|$(unix)|' \

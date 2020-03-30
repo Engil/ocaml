@@ -62,6 +62,12 @@ let dumpenv = make
   (fun log env ->
     Environments.dump log env; (Result.pass, env))
 
+let has_eventlog_runtime = make
+  "has_eventlog_runtime"
+  (Actions_helpers.pass_or_skip (Ocamltest_config.has_eventlog_runtime <> false)
+    "eventlog runtime available"
+    "eventlog runtime not available")
+
 let hasunix = make
   "hasunix"
   (Actions_helpers.pass_or_skip (Ocamltest_config.libunix <> None)
@@ -227,6 +233,7 @@ let _ =
     fail;
     cd;
     dumpenv;
+    has_eventlog_runtime;
     hasunix;
     hassysthreads;
     hasstr;
