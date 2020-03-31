@@ -84,7 +84,6 @@ typedef enum {
                                  !Caml_state->eventlog_paused) f
 
 #define CAML_EVENTLOG_INIT() caml_eventlog_init()
-#define CAML_EVENTLOG_DISABLE() caml_eventlog_disable()
 #define CAML_EV_BEGIN(p) caml_ev_begin(p)
 #define CAML_EV_END(p) caml_ev_end(p)
 #define CAML_EV_COUNTER(c, v) caml_ev_counter(c, v)
@@ -115,7 +114,6 @@ void caml_ev_flush(void);
 #define CAML_EVENTLOG_DO(f) /**/
 
 #define CAML_EVENTLOG_INIT() /**/
-#define CAML_EVENTLOG_DISABLE() /**/
 #define CAML_EV_BEGIN(p) /**/
 #define CAML_EV_END(p) /**/
 #define CAML_EV_COUNTER(c, v) /**/
