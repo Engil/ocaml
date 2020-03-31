@@ -429,7 +429,7 @@ char *caml_secure_getenv (char const *var)
 #endif
 }
 
-#if defined(__APPLE__)
+#if defined(HAS_MACH_ABSOLUTE_TIME)
 
 #include <mach/mach_time.h>
 
@@ -449,26 +449,26 @@ int64_t caml_time_counter(void)
   return (int64_t)((now * time_base.numer) / time_base.denom);
 }
 
-#elif defined(_POSIX_TIMERS)                      \
-  && defined(_POSIX_MONOTONIC_CLOCK)            \
-  && _POSIX_MONOTONIC_CLOCK != (-1)
+#else
 
 int64_t caml_time_counter(void)
 {
+#if defined(HAS_POSIX_MONOTONIC_CLOCK)
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   return
     (int64_t)t.tv_sec  * (int64_t)1000000000 +
     (int64_t)t.tv_nsec;
-}
-
+#elif defined(HAS_GETTIMEOFDAY)
+  struct timeval t;
+  gettimeofday(&t, 0);
+  return
+    (int64_t)t.tv_sec  * (int64_t)1000000000 +
+    (int64_t)t.tv_usec * (int64_t)1000;
 #else
-
-#warning "no proper monotonic clock found, caml_time_counter will be inaccurate"
-
-int64 caml_time_counter(void)
-{
+#warn "no timesource available, caml_time_counter will return 0"
   return 0;
+#endif
 }
 
 #endif

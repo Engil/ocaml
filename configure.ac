@@ -123,6 +123,7 @@ AC_SUBST([natdynlinkopts])
 AC_SUBST([cmxs])
 AC_SUBST([debug_runtime])
 AC_SUBST([eventlog_runtime])
+AC_SUBST([has_monotonic_clock])
 AC_SUBST([otherlibraries])
 AC_SUBST([cc_has_debug_prefix_map])
 AC_SUBST([as_has_debug_prefix_map])
@@ -1080,52 +1081,84 @@ CPP_FLAGS="$saved_CPPFLAGS"
 
 AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 
-## Eventlog runtime clock function
+## Checking for monotonic clock source
 ## On Windows MSVC, QueryPerformanceCounter and QueryPerformanceFrequency
-## are always available
-## On Unix platforms, we check if clock_gettime is available and
-## if the -lrt link flag is required
-## On MacOS clock_gettime's CLOCK_MONOTONIC flag is not actually monotonic
+## are always available.
+## On Unix platforms, we check for the appropriate POSIX feature-test macros.
+## On MacOS clock_gettime's CLOCK_MONOTONIC flag is not actually monotonic.
 ## mach_timebase_info and mach_absolute_time are used instead.
-## On platform with no clock_gettime and other specific variants, we issue
-## a warning and a dummy counter implementation is used, returning 0.
 
+AS_CASE([$host],
+  [*-*-windows],
+    [has_monotonic_clock=true],
+  [*-apple-darwin*], [
+    AC_CHECK_FUNCS([mach_timebase_info mach_absolute_time],
+      [has_monotonic_clock=true, AC_DEFINE([HAS_MACH_ABSOLUTE_TIME])],
+      [has_monotonic_clock=false])],
+  [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    #include <unistd.h>
+    #include <time.h>
+    int main(void)
+    {
+      #if !(defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK)   \
+         && _POSIX_MONOTONIC_CLOCK != (-1))
+        #error "no monotonic clock source"
+      #endif
+        return 0;
+     }
+    ]])],
+    [has_monotonic_clock=true, AC_DEFINE([HAS_POSIX_MONOTONIC_CLOCK])],
+    [has_monotonic_clock=false])
+  ]
+)
+
+# The eventlog runtime is built by default if the proper clock source is found.
+# If asked via --enable-eventlog-runtime, a warning is added if the proper
+# clock source is missing. (and the runtime disabled.)
 AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
   [eventlog_runtime=false; eventlog_runtime_ldlibs=""],
   [
     AS_CASE([$host],
-    [*-*-windows], [
-      AS_CASE([$enable_eventlog_runtime],
-        [yes], [eventlog_runtime=true],
-        [no], [eventlog_runtime=false])],
+    [*-*-windows],
+      [eventlog_runtime=true],
     [*-apple-darwin*], [
-      AC_CHECK_FUNCS([mach_timebase_info mach_absolute_time],
-        [has_mach_absolute_time=true])
       AS_CASE([$enable_eventlog_runtime,$has_mach_absolute_time],
         [*,true],
           [eventlog_runtime=true],
-        [yes,false],
-          [AC_MSG_WARN([mach_absolute_time missing,
-                          eventlog will be inaccurate])
-          eventlog_runtime=true]
-        [auto,*], [eventlog_runtime=false]
+        [yes,false], [
+          AC_MSG_WARN([no monotonic clock source found, disabling eventlog runtime])
+          eventlog_runtime=false
+        ],
+        [auto,*],
+          [eventlog_runtime=false]
     )],
     [AC_SEARCH_LIBS([clock_gettime], [rt],
       [has_clock_gettime=true],
       [has_clock_gettime=false])
-      AS_CASE([$enable_eventlog_runtime,$has_clock_gettime],
-        [*,true],
-          [eventlog_runtime=true
-          AS_IF([test "x$ac_cv_search_clock_gettime" = "xnone required"],
-            [eventlog_runtime_ldlibs=""],
-            [eventlog_runtime_ldlibs=$ac_cv_search_clock_gettime])],
-        [auto,*],
-          [eventlog_runtime=false],
-        [yes,*],
+      AS_CASE([$enable_eventlog_runtime,$has_clock_gettime,$has_monotonic_clock],
+        [auto,false,*], [eventlog_runtime=false],
+        [auto,*,false], [eventlog_runtime=false],
+        [*,true,true],
           [
-           AC_MSG_WARN([clock_gettime missing, eventlog will be inaccurate])
-           eventlog_runtime=true
-          ])])])
+            eventlog_runtime=true
+            AS_IF([test "x$ac_cv_search_clock_gettime" = "xnone required"],
+              [eventlog_runtime_ldlibs=""];
+              [eventlog_runtime_ldlibs=$ac_cv_search_clock_gettime]
+            )
+          ],
+        [yes,false,*],
+          [
+           eventlog_runtime=false
+           AC_MSG_WARN([clock_gettime missing, disabling eventlog runtime])
+          ],
+        [yes,*,false],
+          [
+           eventlog_runtime=false
+           AC_MSG_WARN([no monotonic clock source found, disabling eventlog runtime])
+          ]
+      )]
+    )]
+)
 
 ## Sockets
 
