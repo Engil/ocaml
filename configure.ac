@@ -1122,7 +1122,7 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
     [*-*-windows],
       [eventlog_runtime=true],
     [*-apple-darwin*], [
-      AS_CASE([$enable_eventlog_runtime,$has_mach_absolute_time],
+      AS_CASE([$enable_eventlog_runtime,$has_monotonic_clock],
         [*,true],
           [eventlog_runtime=true],
         [yes,false], [
