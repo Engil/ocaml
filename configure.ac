@@ -1093,7 +1093,10 @@ AS_CASE([$host],
     [has_monotonic_clock=true],
   [*-apple-darwin*], [
     AC_CHECK_FUNCS([mach_timebase_info mach_absolute_time],
-      [has_monotonic_clock=true, AC_DEFINE([HAS_MACH_ABSOLUTE_TIME])],
+      [
+        has_monotonic_clock=true
+        AC_DEFINE([HAS_MACH_ABSOLUTE_TIME])
+      ],
       [has_monotonic_clock=false])],
   [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
     #include <unistd.h>
@@ -1107,7 +1110,10 @@ AS_CASE([$host],
         return 0;
      }
     ]])],
-    [has_monotonic_clock=true, AC_DEFINE([HAS_POSIX_MONOTONIC_CLOCK])],
+    [
+      has_monotonic_clock=true
+      AC_DEFINE([HAS_POSIX_MONOTONIC_CLOCK])
+    ],
     [has_monotonic_clock=false])
   ]
 )
