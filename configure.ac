@@ -1129,7 +1129,7 @@ AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
           AC_MSG_WARN([no monotonic clock source found, disabling eventlog runtime])
           eventlog_runtime=false
         ],
-        [auto,*],
+        [auto,false],
           [eventlog_runtime=false]
     )],
     [AC_SEARCH_LIBS([clock_gettime], [rt],
