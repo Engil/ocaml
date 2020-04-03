@@ -54,9 +54,9 @@ USE_RUNTIME ?=
 
 ifneq ($(USE_RUNTIME),)
 #Check USE_RUNTIME value
-ifeq ($(findstring $(USE_RUNTIME),d i),)
+ifeq ($(findstring $(USE_RUNTIME),d e),)
 $(error If set, USE_RUNTIME must be equal to "d" (debug runtime) \
-        or "i" (instrumented runtime))
+        or "e" (eventlog runtime))
 endif
 
 RUNTIME_VARIANT=-I $(OTOPDIR)/runtime \

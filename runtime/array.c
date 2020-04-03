@@ -23,6 +23,7 @@
 #include "caml/misc.h"
 #include "caml/mlvalues.h"
 #include "caml/signals.h"
+#include "caml/eventlog.h"
 /* Why is caml/spacetime.h included conditionnally sometimes and not here ? */
 #include "caml/spacetime.h"
 
@@ -321,6 +322,7 @@ CAMLprim value caml_make_vect(value len, value init)
         /* We don't want to create so many major-to-minor references,
            so [init] is moved to the major heap by doing a minor GC. */
         caml_minor_collection ();
+        CAML_EV_COUNTER (EV_C_FORCE_MINOR_MAKE_VECT, 1);
       }
       CAMLassert(!(Is_block(init) && Is_young(init)));
       res = caml_alloc_shr(size, 0);

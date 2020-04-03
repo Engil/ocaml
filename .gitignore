@@ -196,8 +196,8 @@ _build
 
 /stdlib/camlheader
 /stdlib/target_camlheader
-/stdlib/camlheader[di]
-/stdlib/target_camlheader[di]
+/stdlib/camlheader[de]
+/stdlib/target_camlheader[de]
 /stdlib/camlheader_ur
 /stdlib/labelled-*
 /stdlib/caml

@@ -316,6 +316,21 @@ clean::
 clean::
 	rm -f "objinfo_helper$(EXE)" "objinfo_helper$(EXE).manifest"
 
+# Eventlog metadata file
+
+eventlog_metadata: $(EVENTLOG_METADATA)
+	sed "s/@endianness/$(EVENTLOG_ENDIANNESS)/g" eventlog_metadata.in \
+	> eventlog_metadata
+
+EVENTLOG_METADATA=eventlog_metadata
+
+install:: $(EVENTLOG_METADATA)
+	$(INSTALL_DATA) \
+	  eventlog_metadata \
+	  "$(INSTALL_LIBDIR)"
+
+clean::
+	rm -f -- eventlog_metadata
 
 # Copy a bytecode executable, stripping debug info
 

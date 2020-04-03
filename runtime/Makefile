@@ -23,7 +23,7 @@ include $(ROOTDIR)/Makefile.common
 BYTECODE_C_SOURCES := $(addsuffix .c, \
   interp misc stacks fix_code startup_aux startup_byt freelist major_gc \
   minor_gc memory alloc roots_byt globroots fail_byt signals \
-  signals_byt printexc backtrace_byt backtrace compare ints \
+  signals_byt printexc backtrace_byt backtrace compare ints eventlog \
   floats str array io extern intern hash sys meta parsing gc_ctrl md5 obj \
   lexing callback debugger weak compact finalise custom dynlink \
   spacetime_byt afl $(UNIX_OR_WIN32) bigarray main memprof domain)
@@ -31,7 +31,7 @@ BYTECODE_C_SOURCES := $(addsuffix .c, \
 NATIVE_C_SOURCES := $(addsuffix .c, \
   startup_aux startup_nat main fail_nat roots_nat signals \
   signals_nat misc freelist major_gc minor_gc memory alloc compare ints \
-  floats str array io extern intern hash sys parsing gc_ctrl md5 obj \
+  floats str array io extern intern hash sys parsing gc_ctrl eventlog md5 obj \
   lexing $(UNIX_OR_WIN32) printexc callback weak compact finalise custom \
   globroots backtrace_nat backtrace dynlink_nat debugger meta \
   dynlink clambda_checks spacetime_nat spacetime_snapshot afl bigarray \
@@ -68,10 +68,10 @@ BYTECODE_STATIC_LIBRARIES += libcamlrund.$(A)
 NATIVE_STATIC_LIBRARIES += libasmrund.$(A)
 endif
 
-ifeq "$(RUNTIMEI)" "true"
-PROGRAMS += ocamlruni$(EXE)
-BYTECODE_STATIC_LIBRARIES += libcamlruni.$(A)
-NATIVE_STATIC_LIBRARIES += libasmruni.$(A)
+ifeq "$(RUNTIMEE)" "true"
+PROGRAMS += ocamlrune$(EXE)
+BYTECODE_STATIC_LIBRARIES += libcamlrune.$(A)
+NATIVE_STATIC_LIBRARIES += libasmrune.$(A)
 endif
 
 ifeq "$(UNIX_OR_WIN32)" "unix"
@@ -92,7 +92,7 @@ libcamlrun_OBJECTS := $(BYTECODE_C_SOURCES:.c=_b.$(O))
 libcamlrund_OBJECTS := $(BYTECODE_C_SOURCES:.c=_bd.$(O)) \
   instrtrace_bd.$(O)
 
-libcamlruni_OBJECTS := $(BYTECODE_C_SOURCES:.c=_bi.$(O))
+libcamlrune_OBJECTS := $(BYTECODE_C_SOURCES:.c=_be.$(O))
 
 libcamlrunpic_OBJECTS := $(BYTECODE_C_SOURCES:.c=_bpic.$(O))
 
@@ -100,7 +100,7 @@ libasmrun_OBJECTS := $(NATIVE_C_SOURCES:.c=_n.$(O)) $(ASM_OBJECTS)
 
 libasmrund_OBJECTS := $(NATIVE_C_SOURCES:.c=_nd.$(O)) $(ASM_OBJECTS)
 
-libasmruni_OBJECTS := $(NATIVE_C_SOURCES:.c=_ni.$(O)) $(ASM_OBJECTS)
+libasmrune_OBJECTS := $(NATIVE_C_SOURCES:.c=_ne.$(O)) $(ASM_OBJECTS)
 
 libasmrunpic_OBJECTS := $(NATIVE_C_SOURCES:.c=_npic.$(O)) \
   $(ASM_OBJECTS:.$(O)=_libasmrunpic.$(O))
@@ -145,6 +145,7 @@ endif
 OC_NATIVE_CPPFLAGS += -DSYS_$(SYSTEM) $(IFLEXDIR) $(LIBUNWIND_INCLUDE_FLAGS)
 
 OC_DEBUG_CPPFLAGS=-DDEBUG
+OC_EVENTLOG_CPPFLAGS=-DCAML_EVENTLOG
 
 ifeq "$(TOOLCHAIN)" "msvc"
 ASMFLAGS=
@@ -281,10 +282,10 @@ ocamlrund$(EXE): prims.$(O) libcamlrund.$(A)
 libcamlrund.$(A): $(libcamlrund_OBJECTS)
 	$(call MKLIB,$@, $^)
 
-ocamlruni$(EXE): prims.$(O) libcamlruni.$(A)
+ocamlrune$(EXE): prims.$(O) libcamlrune.$(A)
 	$(MKEXE) -o $@ $^ $(LIBS)
 
-libcamlruni.$(A): $(libcamlruni_OBJECTS)
+libcamlrune.$(A): $(libcamlrune_OBJECTS)
 	$(call MKLIB,$@, $^)
 
 libcamlrun_pic.$(A): $(libcamlrunpic_OBJECTS)
@@ -299,7 +300,7 @@ libasmrun.$(A): $(libasmrun_OBJECTS)
 libasmrund.$(A): $(libasmrund_OBJECTS)
 	$(call MKLIB,$@, $^)
 
-libasmruni.$(A): $(libasmruni_OBJECTS)
+libasmrune.$(A): $(libasmrune_OBJECTS)
 	$(call MKLIB,$@, $^)
 
 libasmrun_pic.$(A): $(libasmrunpic_OBJECTS)
@@ -312,7 +313,7 @@ libasmrun_shared.$(SO): $(libasmrunpic_OBJECTS)
 
 %_bd.$(O): OC_CPPFLAGS += $(OC_DEBUG_CPPFLAGS)
 
-%_bi.$(O): OC_CPPFLAGS += $(OC_INSTR_CPPFLAGS)
+%_be.$(O): OC_CPPFLAGS += $(OC_EVENTLOG_CPPFLAGS)
 
 %_bpic.$(O): OC_CFLAGS += $(SHAREDLIB_CFLAGS)
 
@@ -320,7 +321,7 @@ libasmrun_shared.$(SO): $(libasmrunpic_OBJECTS)
 
 %_nd.$(O): OC_CPPFLAGS += $(OC_NATIVE_CPPFLAGS) $(OC_DEBUG_CPPFLAGS)
 
-%_ni.$(O): OC_CPPFLAGS += $(OC_NATIVE_CPPFLAGS) $(OC_INSTR_CPPFLAGS)
+%_ne.$(O): OC_CPPFLAGS += $(OC_NATIVE_CPPFLAGS) $(OC_EVENTLOG_CPPFLAGS)
 
 %_npic.$(O): OC_CFLAGS += $(SHAREDLIB_CFLAGS)
 %_npic.$(O): OC_CPPFLAGS += $(OC_NATIVE_CPPFLAGS)
@@ -335,7 +336,7 @@ $(1).$(O): %.c
 	$$(CC) -c $$(OC_CFLAGS) $$(OC_CPPFLAGS) $$(OUTPUTOBJ)$$@ $$<
 endef
 
-object_types := % %_b %_bd %_bi %_bpic %_n %_nd %_ni %_np %_npic
+object_types := % %_b %_bd %_be %_bpic %_n %_nd %_ne %_np %_npic
 
 $(foreach object_type, $(object_types), \
   $(eval $(call COMPILE_C_FILE,$(object_type))))
@@ -390,9 +391,9 @@ depend: *.c caml/opnames.h caml/jumptbl.h caml/version.h
 	$(CC) -MM $(OC_CPPFLAGS) $(OC_DEBUG_CPPFLAGS) \
                   $(BYTECODE_DEP_FILES) | \
 	  sed -e 's/\([^.]*\)\.o/\1_bd.$$(O)/' >> .depend
-	$(CC) -MM $(OC_CPPFLAGS) $(OC_INSTR_CPPFLAGS) \
+	$(CC) -MM $(OC_CPPFLAGS) $(OC_EVENTLOG_CPPFLAGS) \
                $(BYTECODE_DEP_FILES) | \
-	  sed -e 's/\([^.]*\)\.o/\1_bi.$$(O)/' >> .depend
+	  sed -e 's/\([^.]*\)\.o/\1_be.$$(O)/' >> .depend
 	$(CC) -MM $(OC_CPPFLAGS) $(BYTECODE_DEP_FILES) | \
 	  sed -e 's/\([^.]*\)\.o/\1_bpic.$$(O)/' >> .depend
 	$(CC) -MM $(NATIVE_DEP_CPPFLAGS) $(NATIVE_DEP_FILES) | \
@@ -400,9 +401,11 @@ depend: *.c caml/opnames.h caml/jumptbl.h caml/version.h
 	$(CC) -MM $(NATIVE_DEP_CPPFLAGS) $(OC_DEBUG_CPPFLAGS) \
                   $(NATIVE_DEP_FILES) | \
 	  sed -e 's/\([^.]*\)\.o/\1_nd.$$(O)/' >> .depend
-	$(CC) -MM $(NATIVE_DEP_CPPFLAGS) $(OC_INSTR_CPPFLAGS) \
+	$(CC) -MM $(NATIVE_DEP_CPPFLAGS) $(OC_EVENTLOG_CPPFLAGS) *.c | \
+	  sed -e 's/\([^.]*\)\.o/\1_ne.$$(O)/' >> .depend
+	$(CC) -MM $(NATIVE_DEP_CPPFLAGS) $(OC_EVENTLOG_CPPFLAGS) \
                   $(NATIVE_DEP_FILES) | \
-	  sed -e 's/\([^.]*\)\.o/\1_ni.$$(O)/' >> .depend
+	  sed -e 's/\([^.]*\)\.o/\1_ne.$$(O)/' >> .depend
 	$(CC) -MM $(NATIVE_DEP_CPPFLAGS) $(NATIVE_DEP_FILES) | \
 	  sed -e 's/\([^.]*\)\.o/\1_npic.$$(O)/' >> .depend
 endif

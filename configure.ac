@@ -122,7 +122,8 @@ AC_SUBST([natdynlink])
 AC_SUBST([natdynlinkopts])
 AC_SUBST([cmxs])
 AC_SUBST([debug_runtime])
-AC_SUBST([instrumented_runtime])
+AC_SUBST([eventlog_runtime])
+AC_SUBST([has_monotonic_clock])
 AC_SUBST([otherlibraries])
 AC_SUBST([cc_has_debug_prefix_map])
 AC_SUBST([as_has_debug_prefix_map])
@@ -137,6 +138,7 @@ AC_SUBST([bfd_cppflags])
 AC_SUBST([bfd_ldflags])
 AC_SUBST([bfd_ldlibs])
 AC_SUBST([ASPP])
+AC_SUBST([endianness])
 AC_SUBST([AS])
 AC_SUBST([asm_cfi_supported])
 AC_SUBST([sharedlib_cflags])
@@ -215,6 +217,17 @@ AC_ARG_ENABLE([debugger],
 
 AC_ARG_VAR([DLLIBS],
   [which libraries to use (in addition to -ldl) to load dynamic libs])
+
+AC_ARG_ENABLE([eventlog-runtime],
+  [AS_HELP_STRING([--enable-eventlog-runtime],
+    [build the eventlog runtime @<:@default=auto@:>@])],
+  [],
+  [enable_eventlog_runtime=auto])
+
+AC_ARG_ENABLE([instrumented-runtime], [],
+  [AC_MSG_WARN([The instrumented runtime is no longer available. \
+It was superseded by the eventlog runtime, this option does nothing.])]
+  [])
 
 AC_ARG_ENABLE([vmthreads], [],
   [AC_MSG_ERROR([The vmthreads library is no longer available. \
@@ -743,8 +756,11 @@ AC_DEFINE_UNQUOTED([SIZEOF_LONGLONG], [$ac_cv_sizeof_long_long])
 AC_MSG_NOTICE([Target is a $bits bits architecture])
 
 AC_C_BIGENDIAN(
-  [AC_DEFINE([ARCH_BIG_ENDIAN], [1])],
-  [],
+  [
+    AC_DEFINE([ARCH_BIG_ENDIAN], [1]),
+    [endianness="be"]
+  ],
+  [endianness="le"],
   [AC_MSG_ERROR([could not determine endianness.])],
   [AC_MSG_ERROR([unable to handle universal endianness])]
 )
@@ -1084,30 +1100,91 @@ CPPFLAGS="$saved_CPPFLAGS"
 
 AC_CHECK_FUNC([issetugid], [AC_DEFINE([HAS_ISSETUGID])])
 
-## clock_gettime, for the instrumented runtime
+## Checking for monotonic clock source
+## On Windows MSVC, QueryPerformanceCounter and QueryPerformanceFrequency
+## are always available.
+## On Unix platforms, we check for the appropriate POSIX feature-test macros.
+## On MacOS clock_gettime's CLOCK_MONOTONIC flag is not actually monotonic.
+## mach_timebase_info and mach_absolute_time are used instead.
 
-## Note: on MinGW, configure finds a clock_gettime and thus the build
-# system tries to build the instrumented runtime, which causes
-# warnings. For the moment we simply disable it on MinGW
-# but this would need to be further investigated
 AS_CASE([$host],
-  [*-*-mingw32], [instrumented_runtime=false],
-  [AS_IF([test "x$enable_instrumented_runtime" = "xno" ],
-    [instrumented_runtime=false; instrumented_runtime_libs=""],
+  [*-*-windows],
+    [has_monotonic_clock=true],
+  [*-apple-darwin*], [
+    AC_CHECK_FUNCS([mach_timebase_info mach_absolute_time],
+      [
+        has_monotonic_clock=true
+        AC_DEFINE([HAS_MACH_ABSOLUTE_TIME])
+      ],
+      [has_monotonic_clock=false])],
+  [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    #include <unistd.h>
+    #include <time.h>
+    int main(void)
+    {
+      #if !(defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK)   \
+         && _POSIX_MONOTONIC_CLOCK != (-1))
+        #error "no monotonic clock source"
+      #endif
+        return 0;
+     }
+    ]])],
     [
-      AC_SEARCH_LIBS([clock_gettime], [rt],
-        [has_clock_gettime=true],
-        [has_clock_gettime=false])
-      AS_CASE([$enable_instrumented_runtime,$has_clock_gettime],
+      has_monotonic_clock=true
+      AC_DEFINE([HAS_POSIX_MONOTONIC_CLOCK])
+    ],
+    [has_monotonic_clock=false])
+  ]
+)
+
+# The eventlog runtime is built by default if the proper clock source is found.
+# If asked via --enable-eventlog-runtime, a warning is added if the proper
+# clock source is missing. (and the runtime disabled.)
+AS_IF([test "x$enable_eventlog_runtime" = "xno" ],
+  [eventlog_runtime=false; eventlog_runtime_ldlibs=""],
+  [
+    AS_CASE([$host],
+    [*-*-windows],
+      [eventlog_runtime=true],
+    [*-apple-darwin*], [
+      AS_CASE([$enable_eventlog_runtime,$has_monotonic_clock],
         [*,true],
-          [instrumented_runtime=true
-          AS_IF([test "x$ac_cv_search_clock_gettime" = "xnone required"],
-            [instrumented_runtime_libs=""],
-            [instrumented_runtime_libs=$ac_cv_search_clock_gettime])],
-        [auto,*],
-          [instrumented_runtime=false],
-        [yes,*],
-          [AC_MSG_ERROR([the instrumented runtime can not be built])])])])
+          [eventlog_runtime=true],
+        [yes,false], [
+          AC_MSG_WARN([no monotonic clock source found, disabling eventlog])
+          eventlog_runtime=false
+        ],
+        [auto,false],
+          [eventlog_runtime=false]
+    )],
+    [AC_SEARCH_LIBS([clock_gettime], [rt],
+      [has_clock_gettime=true],
+      [has_clock_gettime=false])
+      AS_CASE(
+        [$enable_eventlog_runtime,$has_clock_gettime,$has_monotonic_clock],
+        [auto,false,*], [eventlog_runtime=false],
+        [auto,*,false], [eventlog_runtime=false],
+        [*,true,true],
+          [
+            eventlog_runtime=true
+            AS_IF([test "x$ac_cv_search_clock_gettime" = "xnone required"],
+              [eventlog_runtime_ldlibs=""],
+              [eventlog_runtime_ldlibs=$ac_cv_search_clock_gettime]
+            )
+          ],
+        [yes,false,*],
+          [
+           eventlog_runtime=false
+           AC_MSG_WARN([clock_gettime missing, disabling eventlog])
+          ],
+        [yes,*,false],
+          [
+           eventlog_runtime=false
+           AC_MSG_WARN([no monotonic clock source found, disabling eventlog])
+          ]
+      )]
+    )]
+)
 
 ## Sockets
 
@@ -1761,7 +1838,7 @@ AS_CASE([$host],
   [*-pc-windows],
     [bytecclibs="advapi32.lib ws2_32.lib version.lib"
     nativecclibs="advapi32.lib ws2_32.lib version.lib"],
-  [bytecclibs="$cclibs $DLLIBS $pthread_link $instrumented_runtime_libs"
+  [bytecclibs="$cclibs $DLLIBS $pthread_link $eventlog_runtime_ldlibs"
   nativecclibs="$cclibs $DLLIBS"])
 
 AS_IF([test x"$libdir" = x'${exec_prefix}/lib'],

@@ -58,8 +58,8 @@ ifeq "$(RUNTIMED)" "true"
 all: camlheaderd target_camlheaderd
 endif
 
-ifeq "$(RUNTIMEI)" "true"
-all: camlheaderi target_camlheaderi
+ifeq "$(RUNTIMEE)" "true"
+all: camlheadere target_camlheadere
 endif
 
 .PHONY: allopt opt.opt # allopt and opt.opt are synonyms
@@ -92,9 +92,9 @@ install::
 	$(INSTALL_DATA) target_camlheaderd "$(INSTALL_LIBDIR)/camlheaderd"
 endif
 
-ifeq "$(RUNTIMEI)" "true"
+ifeq "$(RUNTIMEE)" "true"
 install::
-	$(INSTALL_DATA) target_camlheaderi "$(INSTALL_LIBDIR)/camlheaderi"
+	$(INSTALL_DATA) target_camlheadere "$(INSTALL_LIBDIR)/camlheadere"
 endif
 
 .PHONY: installopt
@@ -125,7 +125,7 @@ TARGETHEADERPROGRAM = target_$(HEADERPROGRAM)
 CAMLHEADERS =\
   camlheader target_camlheader camlheader_ur \
   camlheaderd target_camlheaderd \
-  camlheaderi target_camlheaderi
+  camlheadere target_camlheadere
 
 # The % in pattern rules must always match something, hence the slightly strange
 # patterns and $(subst ...) since `camlheader%:` wouldn't match `camlheader`
