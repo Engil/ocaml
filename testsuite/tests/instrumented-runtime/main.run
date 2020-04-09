@@ -1,6 +1,19 @@
+#!/bin/sh
+
 export OCAML_EVENTLOG_ENABLED=1
 export OCAML_EVENTLOG_FILE=${program}
+
 ${program} > ${output} &
+
 pid=$!
 wait $pid
-rm ${program}.$pid.eventlog
+
+eventlog_output_file=${program}.$pid.eventlog
+
+if [ -f ${eventlog_output_file} ]; then
+  exit ${TEST_PASS};
+else
+    echo "instrumented runtime trace not found: ${eventlog_output_file}"
+    > ${ocamltest_response};
+  exit ${TEST_FAIL};
+fi
