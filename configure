@@ -2757,6 +2757,8 @@ toolchain="cc"
 profinfo=false
 profinfo_width=0
 extralibs=
+instrumented_runtime=false
+instrumented_runtime_ldlibs=""
 
 # Information about the package
 
@@ -14187,9 +14189,7 @@ esac
 # if the proper clock source is found.
 # If asked via --enable-instrumented-runtime, a warning is added if the proper
 # clock source is missing. (and the runtime disabled.)
-if test "x$enable_instrumented_runtime" = "xno" ; then :
-  instrumented_runtime=false; instrumented_runtime_ldlibs=""
-else
+if test "x$enable_instrumented_runtime" != "xno" ; then :
 
     case $host in #(
   *-*-windows) :

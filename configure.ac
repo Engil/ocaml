@@ -56,6 +56,8 @@ toolchain="cc"
 profinfo=false
 profinfo_width=0
 extralibs=
+instrumented_runtime=false
+instrumented_runtime_ldlibs=""
 
 # Information about the package
 
@@ -1165,8 +1167,7 @@ AS_CASE([$host],
 # if the proper clock source is found.
 # If asked via --enable-instrumented-runtime, a warning is added if the proper
 # clock source is missing. (and the runtime disabled.)
-AS_IF([test "x$enable_instrumented_runtime" = "xno" ],
-  [instrumented_runtime=false; instrumented_runtime_ldlibs=""],
+AS_IF([test "x$enable_instrumented_runtime" != "xno" ],
   [
     AS_CASE([$host],
     [*-*-windows],
