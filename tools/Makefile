@@ -323,9 +323,6 @@ install::
 	  eventlog_metadata \
 	  "$(INSTALL_LIBDIR)"
 
-clean::
-	rm -f -- eventlog_metadata
-
 # Copy a bytecode executable, stripping debug info
 
 stripdebug=$(ROOTDIR)/compilerlibs/ocamlcommon.cma \
