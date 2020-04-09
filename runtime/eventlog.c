@@ -31,6 +31,12 @@
 #include <process.h>
 #endif
 
+#ifdef HAS_MACH_ABSOLUTE_TIME
+#include <mach/mach_time.h>
+#elif HAS_POSIX_MONOTONIC_CLOCK
+#include <time.h>
+#endif
+
 #ifdef CAML_INSTR
 
 #define CTF_MAGIC 0xc1fc1fc1
@@ -70,6 +76,47 @@ struct event_buffer {
 };
 
 static struct event_buffer* evbuf;
+
+int64_t time_counter(void)
+{
+#if defined(HAS_MACH_ABSOLUTE_TIME)
+  static mach_timebase_info_data_t time_base = {0};
+
+  if (time_base.denom == 0) {
+    if (mach_timebase_info (&time_base) != KERN_SUCCESS)
+      return 0;
+
+    if (time_base.denom == 0)
+      return 0;
+  }
+
+  uint64_t now = mach_absolute_time ();
+  return (int64_t)((now * time_base.numer) / time_base.denom);
+
+#elif defined(HAS_POSIX_MONOTONIC_CLOCK)
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return
+    (int64_t)t.tv_sec  * (int64_t)1000000000 +
+    (int64_t)t.tv_nsec;
+
+#elif defined(_WIN32)
+  static double clock_freq = 0;
+  static LARGE_INTEGER now;
+
+  if (clock_freq == 0) {
+    LARGE_INTEGER f;
+    if (!QueryPerformanceFrequency(&f))
+      return 0;
+    clock_freq = (1000000000.0 / f.QuadPart);
+  };
+
+  if (!QueryPerformanceCounter(&now))
+    return 0;
+  return (int64_t)(now.QuadPart * clock_freq);
+
+#endif
+}
 
 static void setup_evbuf()
 {
@@ -136,7 +183,7 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 
   struct ctf_event_header ev_flush;
   ev_flush.id = EV_FLUSH;
-  ev_flush.timestamp = caml_time_counter() -
+  ev_flush.timestamp = time_counter() -
                         Caml_state->eventlog_startup_timestamp;
   ev_flush.pid = Caml_state->eventlog_startup_pid;
 
@@ -168,7 +215,7 @@ static void flush_events(FILE* out, struct event_buffer* eb)
   }
 
   flush_duration =
-    (caml_time_counter() - Caml_state->eventlog_startup_timestamp) -
+    (time_counter() - Caml_state->eventlog_startup_timestamp) -
     ev_flush.timestamp;
 
   FWRITE_EV(&ev_flush, sizeof(struct ctf_event_header));
@@ -208,7 +255,7 @@ void caml_eventlog_init()
 
   if (!Caml_state->eventlog_enabled) return;
 
-  Caml_state->eventlog_startup_timestamp = caml_time_counter();
+  Caml_state->eventlog_startup_timestamp = time_counter();
 #ifdef _WIN32
   Caml_state->eventlog_startup_pid = _getpid();
 #else
@@ -243,7 +290,7 @@ static void post_event(ev_gc_phase phase, ev_gc_counter counter_kind,
   ev->counter_kind = counter_kind;
   ev->alloc_bucket = bucket;
   ev->phase = phase;
-  ev->header.timestamp = caml_time_counter() -
+  ev->header.timestamp = time_counter() -
                            Caml_state->eventlog_startup_timestamp;
   evbuf->ev_generated = i + 1;
 }

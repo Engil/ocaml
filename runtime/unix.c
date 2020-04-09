@@ -25,12 +25,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <time.h>
 #include "caml/config.h"
 #ifdef SUPPORT_DYNAMIC_LINKING
 #ifdef __CYGWIN__
@@ -428,50 +426,6 @@ char *caml_secure_getenv (char const *var)
     return NULL;
 #endif
 }
-
-#if defined(HAS_MACH_ABSOLUTE_TIME)
-
-#include <mach/mach_time.h>
-
-int64_t caml_time_counter(void)
-{
-  static mach_timebase_info_data_t time_base = {0};
-
-  if (time_base.denom == 0) {
-    if (mach_timebase_info (&time_base) != KERN_SUCCESS)
-      return 0;
-
-    if (time_base.denom == 0)
-      return 0;
-  }
-
-  uint64_t now = mach_absolute_time ();
-  return (int64_t)((now * time_base.numer) / time_base.denom);
-}
-
-#else
-
-int64_t caml_time_counter(void)
-{
-#if defined(HAS_POSIX_MONOTONIC_CLOCK)
-  struct timespec t;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return
-    (int64_t)t.tv_sec  * (int64_t)1000000000 +
-    (int64_t)t.tv_nsec;
-#elif defined(HAS_GETTIMEOFDAY)
-  struct timeval t;
-  gettimeofday(&t, 0);
-  return
-    (int64_t)t.tv_sec  * (int64_t)1000000000 +
-    (int64_t)t.tv_usec * (int64_t)1000;
-#else
-#warn "no timesource available, caml_time_counter will return 0"
-  return 0;
-#endif
-}
-
-#endif
 
 int caml_num_rows_fd(int fd)
 {
