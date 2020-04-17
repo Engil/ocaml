@@ -1179,7 +1179,6 @@ AS_IF([test "x$enable_instrumented_runtime" != "xno" ],
         [yes,false], [
           AC_MSG_ERROR([Instrumented runtime support requested \
 but no proper monotonic clock source was found.])
-          instrumented_runtime=false
         ],
         [auto,false],
           [instrumented_runtime=false]
