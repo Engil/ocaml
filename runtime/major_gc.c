@@ -383,9 +383,9 @@ static void mark_slice (intnat work)
   value v;
   header_t hd;
   mlsize_t size, i, start, end; /* [start] is a local copy of [current_index] */
-  #ifdef CAML_INSTR
+#ifdef CAML_INSTR
   int slice_fields = 0; /** eventlog counters */
-  #endif /*CAML_INSTR*/
+#endif /*CAML_INSTR*/
   int slice_pointers = 0;
 
   caml_gc_message (0x40, "Marking %"ARCH_INTNAT_PRINTF_FORMAT"d words\n", work);
@@ -795,7 +795,6 @@ void caml_major_collection_slice (intnat howmuch)
     caml_compact_heap_maybe ();
     CAML_EV_END(EV_MAJOR_CHECK_AND_COMPACT);
   }
-
 
  finished:
   caml_gc_message (0x40, "work-done = %"
