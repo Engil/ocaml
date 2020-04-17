@@ -85,7 +85,7 @@ Working version
 
 - #9082: The instrumented runtime now records logs in the CTF format.
   A new API is available in the runtime to collect runtime statistics,
-  replacing the already existing instrumented runtime macros.
+  replacing the previous instrumented runtime macros.
   Gc.eventlog_pause and Gc.eventlog_resume were added to allow user to control
   instrumentation in a running program.
   (Enguerrand Decorne, Stephen Dolan)

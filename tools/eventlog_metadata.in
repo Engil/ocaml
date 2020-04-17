@@ -35,7 +35,7 @@ trace {
     byte_order = @endianness@;
     packet.header := struct {
         uint32_t magic; /* required: must contain CTF magic number */
-        uint16_t ocaml_trace_version; /* our own trace format versionning */
+        uint16_t ocaml_trace_version; /* our own trace format versioning */
         uint16_t stream_id; /* required, although we have only one. */
     };
 };
@@ -44,7 +44,7 @@ trace {
 
 We use only one stream at the moment.
 Each event payload must contain an header with a timestamp and a pid.
-The id field refers to the various event kinds defined further dowm this file.
+The id field refers to the various event kinds defined further down this file.
 
 */
 stream {
@@ -59,7 +59,7 @@ stream {
 /*
 
 These enumerations are mostly following the instrumented runtime datapoints.
-gc_phase aims to track the entry and exit time of each following events
+gc_phase aims to track the entry and exit time of each of the following events
 during collection.
 
 */
@@ -153,7 +153,7 @@ enum alloc_bucket : uint8_t {
 Each event is comprised of the previously defined event.header
 and the fields defined here.
 
-entry events marks the start of a gc phase
+An entry event marks the start of a gc phase.
 
 */
 event {
@@ -167,7 +167,7 @@ event {
 
 /*
 
-exit counterpart to entry events
+exit counterparts to entry events
 
 */
 event {
@@ -200,7 +200,7 @@ event {
 };
 
 /*
- flush events are used to track the time spent by the tracing runtime flushing
+ Flush events are used to track the time spent by the tracing runtime flushing
  data to disk, useful to remove flushing overhead for other runtime mesurements
  in the trace.
 */

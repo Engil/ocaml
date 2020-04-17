@@ -1165,8 +1165,8 @@ AS_CASE([$host],
 
 # The instrumented runtime is built by default
 # if the proper clock source is found.
-# If asked via --enable-instrumented-runtime, a warning is added if the proper
-# clock source is missing. (and the runtime disabled.)
+# If asked via --enable-instrumented-runtime, configuration fails if the proper
+# clock source is missing.
 AS_IF([test "x$enable_instrumented_runtime" != "xno" ],
   [
     AS_CASE([$host],
