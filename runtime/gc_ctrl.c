@@ -585,7 +585,6 @@ CAMLprim value caml_gc_full_major(value v)
   caml_finish_major_cycle ();
   test_and_compact ();
   // call finalisers
-  caml_process_pending_actions();
   exn = caml_process_pending_actions_exn();
 
 cleanup:
