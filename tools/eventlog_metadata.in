@@ -67,6 +67,7 @@ enum gc_phase : uint16_t {
     "compact/main" = 0,
     "compact/recompact",
     "explicit/gc_set",
+    "explicit/gc_stat",
     "explicit/gc_minor",
     "explicit/gc_major",
     "explicit/gc_full_major",

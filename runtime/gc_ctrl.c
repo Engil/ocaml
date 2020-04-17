@@ -268,8 +268,10 @@ void caml_heap_check (void)
 CAMLprim value caml_gc_stat(value v)
 {
   value result;
+  CAML_EV_BEGIN(EV_EXPLICIT_GC_STAT);
   CAMLassert (v == Val_unit);
   result = heap_stats (1);
+  CAML_EV_END(EV_EXPLICIT_GC_STAT);
   return result;
 }
 
