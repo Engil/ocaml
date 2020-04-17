@@ -674,7 +674,6 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
   caml_percent_max = norm_pmax (percent_m);
   caml_init_major_heap (major_bsize);
   caml_major_window = norm_window (window);
-  CAML_EVENTLOG_INIT();
   caml_custom_major_ratio = norm_custom_maj (custom_maj);
   caml_custom_minor_ratio = norm_custom_min (custom_min);
   caml_custom_minor_max_bsz = custom_bsz;
@@ -701,6 +700,7 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
                    ARCH_INTNAT_PRINTF_FORMAT "u\n", caml_allocation_policy);
   caml_gc_message (0x20, "Initial smoothing window: %d\n",
                    caml_major_window);
+  CAML_EVENTLOG_INIT();
 }
 
 
