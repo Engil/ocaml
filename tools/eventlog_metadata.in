@@ -43,7 +43,7 @@ trace {
 /*
 
 We use only one stream at the moment.
-Each event payload must contain an header with a timestamp and a pid.
+Each event payload must contain a header with a timestamp and a pid.
 The id field refers to the various event kinds defined further down this file.
 
 */
