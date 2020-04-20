@@ -357,8 +357,11 @@ void caml_ev_flush()
   if (!Caml_state->eventlog_enabled) return;
   if (Caml_state->eventlog_paused) return;
 
-  if (Caml_state->eventlog_out)
+  if (Caml_state->eventlog_out) {
+    if (evbuf)
+      flush_events(Caml_state->eventlog_out, evbuf);
     fflush(Caml_state->eventlog_out);
+  };
 }
 
 void caml_eventlog_disable()
