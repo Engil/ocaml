@@ -14187,8 +14187,8 @@ esac
 
 # The instrumented runtime is built by default
 # if the proper clock source is found.
-# If asked via --enable-instrumented-runtime, a warning is added if the proper
-# clock source is missing. (and the runtime disabled.)
+# If asked via --enable-instrumented-runtime, configuration fails if the proper
+# clock source is missing.
 if test "x$enable_instrumented_runtime" != "xno" ; then :
 
     case $host in #(
@@ -14203,7 +14203,6 @@ if test "x$enable_instrumented_runtime" != "xno" ; then :
 
           as_fn_error $? "Instrumented runtime support requested \
 but no proper monotonic clock source was found." "$LINENO" 5
-          instrumented_runtime=false
          ;; #(
   auto,false) :
     instrumented_runtime=false
