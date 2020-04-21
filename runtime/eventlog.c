@@ -168,7 +168,7 @@ static void setup_eventlog_file()
       caml_eventlog_disable();
     fflush(Caml_state->eventlog_out);
   } else {
-    Caml_state->eventlog_enabled = 0;
+    caml_fatal_error("eventlog: could not open trace for writing");
   }
 
   CAMLreturn0;
