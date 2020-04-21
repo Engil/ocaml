@@ -238,7 +238,8 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 static void teardown_eventlog(void)
 {
   if (evbuf) {
-    flush_events(Caml_state->eventlog_out, evbuf);
+    if (Caml_state->eventlog_out)
+      flush_events(Caml_state->eventlog_out, evbuf);
     caml_stat_free(evbuf);
     evbuf = NULL;
   }
@@ -385,8 +386,8 @@ CAMLprim value caml_eventlog_pause(value v)
   CAMLassert(v == Val_unit);
   if (Caml_state->eventlog_enabled) {
     Caml_state->eventlog_paused = 1;
-    if (evbuf)
-     flush_events(Caml_state->eventlog_out, evbuf);
+    if (evbuf && Caml_state->eventlog_out)
+      flush_events(Caml_state->eventlog_out, evbuf);
   };
   return Val_unit;
 }
