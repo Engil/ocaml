@@ -700,7 +700,6 @@ void caml_init_gc (uintnat minor_size, uintnat major_size,
                    ARCH_INTNAT_PRINTF_FORMAT "u\n", caml_allocation_policy);
   caml_gc_message (0x20, "Initial smoothing window: %d\n",
                    caml_major_window);
-  CAML_EVENTLOG_INIT();
 }
 
 

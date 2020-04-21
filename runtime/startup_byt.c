@@ -35,6 +35,7 @@
 #include "caml/debugger.h"
 #include "caml/domain.h"
 #include "caml/dynlink.h"
+#include "caml/eventlog.h"
 #include "caml/exec.h"
 #include "caml/fail.h"
 #include "caml/fix_code.h"
@@ -431,6 +432,7 @@ CAMLexport void caml_main(char_os **argv)
   caml_interprete(NULL, 0);
   /* Initialize the debugger, if needed */
   caml_debugger_init();
+  CAML_EVENTLOG_INIT();
   /* Load the code */
   caml_code_size = caml_seek_section(fd, &trail, "CODE");
   caml_load_code(fd, caml_code_size);
@@ -526,6 +528,7 @@ CAMLexport value caml_startup_code_exn(
   caml_interprete(NULL, 0);
   /* Initialize the debugger, if needed */
   caml_debugger_init();
+  CAML_EVENTLOG_INIT();
   /* Load the code */
   caml_start_code = code;
   caml_code_size = code_size;

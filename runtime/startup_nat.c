@@ -24,6 +24,7 @@
 #include "caml/custom.h"
 #include "caml/debugger.h"
 #include "caml/domain.h"
+#include "caml/eventlog.h"
 #include "caml/fail.h"
 #include "caml/freelist.h"
 #include "caml/gc.h"
@@ -147,6 +148,7 @@ value caml_startup_common(char_os **argv, int pooling)
 #endif
   caml_init_backtrace();
   caml_debugger_init (); /* force debugger.o stub to be linked */
+  CAML_EVENTLOG_INIT();
   exe_name = argv[0];
   if (exe_name == NULL) exe_name = T("");
   proc_self_exe = caml_executable_name();
