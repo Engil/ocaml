@@ -79,7 +79,7 @@ struct event_buffer {
 
 static struct event_buffer* evbuf;
 
-int64_t time_counter(void)
+static int64_t time_counter(void)
 {
 #ifdef _WIN32
   static double clock_freq = 0;
