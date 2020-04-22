@@ -226,8 +226,9 @@ static void flush_events(FILE* out, struct event_buffer* eb)
 
  fwrite_failure:
   /* on event flush failure, shut down eventlog. */
-  fprintf(stderr,
-          "eventlog: error while writing trace file, disabling eventlog");
+  if (caml_runtime_warnings_active())
+    fprintf(stderr,
+           "eventlog: error while writing trace file, disabling eventlog\n");
   caml_eventlog_disable();
   return;
 
