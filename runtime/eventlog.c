@@ -132,32 +132,21 @@ static void setup_evbuf()
 
 static void setup_eventlog_file()
 {
-  CAMLparam0();
-  char_os *filename = NULL;
-  char_os *eventlog_filename;
-  CAMLlocal1 (tmp);
+  char_os output_file[4096];
+  int output_file_len = sizeof(output_file)/sizeof(char_os);
+  char_os *eventlog_filename = NULL;
 
   eventlog_filename = caml_secure_getenv(T("OCAML_EVENTLOG_FILE"));
+
   if (eventlog_filename) {
-    char *input =  caml_stat_strdup_of_os(eventlog_filename);
-
-    if (input != NULL) {
-      tmp = caml_alloc_sprintf("%s.%d.eventlog",
-                               input, Caml_state->eventlog_startup_pid);
-      caml_stat_free(input);
-      filename = caml_stat_strdup_to_os(String_val(tmp));
-    }
-
+    snprintf_os(output_file, output_file_len, T("%s.%d.eventlog"),
+               eventlog_filename, Caml_state->eventlog_startup_pid);
   } else {
-    tmp = caml_alloc_sprintf("caml-eventlog-%d",
-                             Caml_state->eventlog_startup_pid);
-    filename = caml_stat_strdup_to_os(String_val(tmp));
+    snprintf_os(output_file, output_file_len, T("caml-eventlog-%d"),
+               Caml_state->eventlog_startup_pid);
   }
 
-  if (filename) {
-    Caml_state->eventlog_out = fopen_os(filename, T("wb"));
-    caml_stat_free(filename);
-  }
+  Caml_state->eventlog_out = fopen_os(output_file, T("wb"));
 
   if (Caml_state->eventlog_out) {
     int ret =  fwrite(&header, sizeof(struct ctf_stream_header),
@@ -168,8 +157,6 @@ static void setup_eventlog_file()
   } else {
     caml_fatal_error("eventlog: could not open trace for writing");
   }
-
-  CAMLreturn0;
 }
 
 #define FWRITE_EV(item, size) \
