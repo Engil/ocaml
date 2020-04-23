@@ -117,6 +117,7 @@ value caml_startup_common(char_os **argv, int pooling)
   caml_verb_gc = 0x3F;
 #endif
   caml_parse_ocamlrunparam();
+  CAML_EVENTLOG_INIT();
 #ifdef DEBUG
   caml_gc_message (-1, "### OCaml runtime: debug mode ###\n");
 #endif
@@ -148,7 +149,6 @@ value caml_startup_common(char_os **argv, int pooling)
 #endif
   caml_init_backtrace();
   caml_debugger_init (); /* force debugger.o stub to be linked */
-  CAML_EVENTLOG_INIT();
   exe_name = argv[0];
   if (exe_name == NULL) exe_name = T("");
   proc_self_exe = caml_executable_name();
