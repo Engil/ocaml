@@ -70,7 +70,9 @@ endef
 
 CAMLC = $(BOOT_OCAMLC) -g -nostdlib -I $(ROOTDIR)/boot \
         -use-prims $(ROOTDIR)/runtime/primitives -I $(ROOTDIR)
-CAMLOPT = $(CAMLRUN) $(ROOTDIR)/ocamlopt$(EXE) -g -nostdlib -I $(ROOTDIR)/stdlib
+CAMLOPT = $(CAMLRUN) $(ROOTDIR)/ocamlopt$(EXE) -g -nostdlib -I $(ROOTDIR)/stdlib \
+        -I $(ROOTDIR)/runtime -I $(ROOTDIR)/asmrun
+
 CAMLLEX = $(CAMLRUN) $(ROOTDIR)/boot/ocamllex
 INCLUDES = $(addprefix -I $(ROOTDIR)/,utils parsing typing bytecomp \
                        middle_end middle_end/closure middle_end/flambda \
