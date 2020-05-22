@@ -144,7 +144,7 @@ static void setup_eventlog_file()
     if (ret > OUTPUT_FILE_LEN)
       caml_fatal_error("eventlog: specified OCAML_EVENTLOG_PREFIX is too long");
   } else {
-    snprintf_os(output_file, OUTPUT_FILE_LEN, T("caml-eventlog-%d"),
+    snprintf_os(output_file, OUTPUT_FILE_LEN, T("caml-%d.eventlog"),
                Caml_state->eventlog_startup_pid);
   }
 
