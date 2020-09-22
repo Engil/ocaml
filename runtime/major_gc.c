@@ -274,7 +274,7 @@ Caml_inline void mark_stack_push(struct mark_stack* stk, value block,
 
 
 #ifdef NO_NAKED_POINTERS
-#ifdef NATIVE_CODE
+#ifdef NAKED_POINTERS_CHECKER
 
 #ifdef _WIN32
 #include <windows.h>
@@ -364,9 +364,11 @@ static int is_pointer_safe (value v, value *p)
 
 void caml_darken (value v, value *p /* not used */)
 {
+  header_t h;
+  tag_t t;
 #ifdef NO_NAKED_POINTERS
   if (Is_block (v) && !Is_young (v)) {
-#ifdef NATIVE_CODE
+#ifdef NAKED_POINTERS_CHECKER
     if (!is_pointer_safe(v,p)) return;
 
     /* Atoms never need to be marked. */
@@ -377,8 +379,8 @@ void caml_darken (value v, value *p /* not used */)
 #else
   if (Is_block (v) && Is_in_heap (v)) {
 #endif
-    header_t h = Hd_val (v);
-    tag_t t = Tag_hd (h);
+    h = Hd_val (v);
+    t = Tag_hd (h);
     if (t == Infix_tag){
       v -= Infix_offset_val(v);
       h = Hd_val (v);
@@ -510,7 +512,7 @@ Caml_inline void mark_slice_darken(struct mark_stack* stk, value v, mlsize_t i,
         && (!(Tag_val (v) == Closure_tag || Tag_val (v) == Infix_tag) ||
             Is_in_heap (child))) {
 
-#ifdef NATIVE_CODE
+#ifdef NAKED_POINTERS_CHECKER
     if (!is_pointer_safe(child, &Field(v,i)))
       return ;
     /* Atoms never need to be marked. */
