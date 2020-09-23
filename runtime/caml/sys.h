@@ -45,6 +45,8 @@ CAMLextern value caml_sys_get_argv(value unit);
 
 extern char_os * caml_exe_name;
 
+CAMLextern value caml_sys_const_naked_pointers_checked(value unit);
+
 #ifdef __cplusplus
 }
 #endif
