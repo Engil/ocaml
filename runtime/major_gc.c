@@ -273,8 +273,7 @@ Caml_inline void mark_stack_push(struct mark_stack* stk, value block,
 }
 
 
-#ifdef NO_NAKED_POINTERS
-#ifdef NAKED_POINTERS_CHECKER
+#if defined(NO_NAKED_POINTERS) && defined(NAKED_POINTERS_CHECKER)
 
 #ifdef _WIN32
 #include <windows.h>
@@ -360,7 +359,6 @@ static int is_pointer_safe (value v, value *p)
 }
 
 #endif
-#endif
 
 void caml_darken (value v, value *p /* not used */)
 {
@@ -374,7 +372,7 @@ void caml_darken (value v, value *p /* not used */)
     /* Atoms never need to be marked. */
     if (Wosize_val (v) == 0)
       return;
-#endif /* NNP check */
+#endif /* NAKED_POINTERS_CHECKER */
 
 #else
   if (Is_block (v) && Is_in_heap (v)) {
