@@ -567,7 +567,7 @@ let _ = register_named_value "Pervasives.do_at_exit" do_at_exit
 
 external major : unit -> unit = "caml_gc_major"
 external naked_pointers_checked : unit -> bool = "caml_sys_const_naked_pointers_checked"
-let _ = if naked_pointers_checked () then at_exit major
+let () = if naked_pointers_checked () then at_exit major
 
 (*MODULE_ALIASES*)
 module Arg          = Arg
