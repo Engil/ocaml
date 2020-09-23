@@ -496,8 +496,7 @@ Caml_inline void mark_slice_darken(struct mark_stack* stk, value v, mlsize_t i,
   child = Field (v, i);
 
 #ifdef NO_NAKED_POINTERS
-  if (Is_block (child)
-      && ! Is_young (child)) {
+  if (Is_block (child) && ! Is_young (child)) {
 
 #ifdef NAKED_POINTERS_CHECKER
     if (!is_pointer_safe(child, &Field(v,i)))
