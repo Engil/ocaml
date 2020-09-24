@@ -241,8 +241,7 @@ static int is_pointer_safe (value v, value *p)
 void caml_darken (value v, value *p /* not used */)
 {
 #ifdef NATIVE_CODE_AND_NO_NAKED_POINTERS
-  if (Is_block (v) && !Is_young (v)) {
-
+   if (Is_block (v) && !Is_young (v) && Wosize_val (v) > 0) {
     if (!is_pointer_safe(v,p)) return;
 
     /* Atoms never need to be marked. */
@@ -334,6 +333,7 @@ Caml_inline value* mark_slice_darken(value *gray_vals_ptr,
 #ifdef NATIVE_CODE_AND_NO_NAKED_POINTERS
   if (Is_block (child)
         && ! Is_young (child)
+        && Wosize_val (child) > 0
         /* Closure blocks contain code pointers at offsets that cannot
            be reliably determined, so we always use the page table when
            marking such values. */
